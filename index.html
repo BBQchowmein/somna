@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOMNA — 安睡如初</title>
+<meta name="description" content="一套温和的夜间仪式，几分钟内让思绪安静下来。像从前那样入睡。">
+<meta name="theme-color" content="#f5f0e7">
+<script>try{history.scrollRestoration='manual'}catch(e){}</script>
+<link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f5f0e7'/%3E%3Cpath d='M7 32Q32 9 57 32Q32 55 7 32Z' fill='%23e9e1d2' stroke='%231a1611' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%231a1611'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   SOMNA
+   ============================================================ */
+:root{
+  --paper:#f5f0e7;
+  --ink:#1a1611;
+  --muted:#6f675c;
+  --line:rgba(26,22,17,.14);
+  --surface:#fbf7ef;
+  --green:#24443a;
+  --green-deep:#13271f;
+  --green-soft:#dde6dc;
+  --rust:#8e3b22;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  --sans:"Inter","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --mad:0;
+}
+*{box-sizing:border-box}
+html{background:#f5f0e7}
+body{
+  margin:0;
+  font-family:var(--sans);
+  color:var(--ink);
+  background:var(--paper);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+  transition:background-color .2s linear;
+}
+::selection{background:#24443a;color:#f5f0e7}
+a{color:inherit}
+img,svg{display:block}
+button{font-family:inherit}
+.wrap{width:min(1240px,calc(100% - 96px));margin-inline:auto}
+
+/* grain / atmosphere ------------------------------------------------ */
+#grain{
+  position:fixed;inset:0;z-index:90;pointer-events:none;
+  opacity:.07;
+  background-repeat:repeat;background-size:170px 170px;
+  contain:strict;
+}
+#vignette{
+  position:fixed;inset:0;z-index:70;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 50% 45%, transparent 30%, rgba(4,3,3,.42) 72%, rgba(2,2,2,.88) 100%);
+  transition:opacity .1s linear;
+}
+#dread{
+  position:fixed;inset:0;z-index:69;pointer-events:none;opacity:0;
+  background:
+    radial-gradient(ellipse at 50% 118%, rgba(88,12,6,.3), transparent 58%),
+    linear-gradient(180deg, rgba(38,28,18,.04), rgba(38,18,10,.34));
+  mix-blend-mode:multiply;
+}
+#scan{
+  position:fixed;inset:0;z-index:71;pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(180deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode:multiply;
+}
+#whispers{position:fixed;inset:0;z-index:72;pointer-events:none;overflow:hidden}
+.whisper{
+  position:fixed;font-family:var(--serif);font-style:italic;
+  font-size:11.5px;letter-spacing:.04em;color:var(--ink);
+  opacity:0;filter:blur(.25px);white-space:nowrap;
+  transition:opacity .7s ease;
+  will-change:opacity,transform;
+}
+#watchers{position:fixed;inset:0;z-index:73;pointer-events:none;overflow:hidden}
+.watcher{
+  position:fixed;width:var(--w);transform:translate(-50%,-50%);
+  opacity:0;transition:opacity 1.8s ease;
+  filter:blur(.7px) drop-shadow(0 8px 14px rgba(20,14,8,.18));
+  will-change:opacity;
+}
+.watcher svg{width:100%;height:auto;overflow:visible}
+.watcher .eye-shell{transform-box:fill-box;transform-origin:center;transition:transform .09s ease}
+.watcher.blink .eye-shell{transform:scaleY(.06)}
+
+/* HUD --------------------------------------------------------------- */
+#hud{
+  position:fixed;left:34px;bottom:26px;z-index:95;
+  display:flex;align-items:center;gap:9px;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);opacity:.85;transition:opacity .6s ease;
+  pointer-events:none;
+}
+#hud .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(36,68,58,.1)}
+#hud.one .dot{background:#8e1f14;box-shadow:0 0 8px rgba(180,30,18,.7)}
+#hud.hidden{opacity:0}
+#sound{
+  position:fixed;right:30px;bottom:24px;z-index:96;
+  border:1px solid var(--line);background:rgba(245,240,231,.42);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  color:var(--muted);
+  border-radius:99px;padding:8px 14px;font-size:9px;letter-spacing:.12em;
+  text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:opacity .5s,color .4s,border-color .4s,background .4s;opacity:.72;
+}
+#sound:hover{opacity:1;color:var(--ink)}
+#sound .bars{display:flex;align-items:flex-end;gap:2px;height:9px}
+#sound .bars i{display:block;width:2px;height:3px;background:currentColor;transition:height .3s}
+#sound.on .bars i:nth-child(1){height:5px}
+#sound.on .bars i:nth-child(2){height:9px}
+#sound.on .bars i:nth-child(3){height:4px}
+#sound.on .bars i:nth-child(4){height:7px}
+#sound.hidden{opacity:0;pointer-events:none}
+#soundHint{
+  position:fixed;right:32px;bottom:58px;z-index:96;pointer-events:none;
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  opacity:0;transition:opacity 1s ease;
+}
+#soundHint.show{opacity:.55}
+#soundHint.hidden{opacity:0}
+
+/* NAV --------------------------------------------------------------- */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:120;
+  display:flex;align-items:center;justify-content:space-between;gap:28px;
+  padding:20px 38px;
+  color:var(--ink);
+  transition:opacity .7s var(--ease),background-color .5s,backdrop-filter .5s,border-color .5s;
+  border-bottom:1px solid transparent;
+}
+.nav.scrolled{
+  background:rgba(245,240,231,.7);
+  backdrop-filter:blur(16px) saturate(1.1);
+  -webkit-backdrop-filter:blur(16px) saturate(1.1);
+  border-bottom-color:var(--line);
+}
+.nav.hidden{opacity:0;pointer-events:none}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+.brand-glyph{width:21px;height:21px;transition:transform .8s var(--ease)}
+.brand:hover .brand-glyph{transform:rotate(-14deg)}
+.brand-word{font-family:var(--serif);font-size:20px;letter-spacing:.19em;line-height:1}
+.nav-links{display:flex;gap:32px;align-items:center}
+.nav-links a{
+  text-decoration:none;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);transition:color .3s;position:relative;
+}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  text-decoration:none;background:var(--green);color:#f2eee2;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  padding:11px 20px;border-radius:99px;transition:transform .4s var(--ease),background .4s;
+  white-space:nowrap;
+}
+.nav-cta:hover{transform:translateY(-1px);background:var(--green-deep)}
+
+/* HERO --------------------------------------------------------------- */
+.hero{
+  position:relative;min-height:100svh;display:flex;align-items:center;
+  padding:148px 0 80px;overflow:hidden;isolation:isolate;
+}
+.hero-bg{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;will-change:transform}
+.b1{width:48vw;height:48vw;left:-12vw;top:-14vw;background:radial-gradient(circle,#dce6d7,#eef0e3 60%,transparent 72%)}
+.b2{width:38vw;height:38vw;right:-6vw;top:12vh;background:radial-gradient(circle,#f0d8c2,#f4e8d9 55%,transparent 72%)}
+.b3{width:34vw;height:34vw;left:38vw;bottom:-20vw;background:radial-gradient(circle,#dfe5d8,#f1eee1 60%,transparent 74%)}
+.hero-grid{
+  position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;
+  gap:48px;align-items:center;
+}
+.eyebrow{
+  display:flex;align-items:center;gap:10px;margin:0;
+  font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+}
+.live-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 4px rgba(36,68,58,.1);
+  animation:dotPulse 3.4s ease-in-out infinite;
+}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 3px rgba(36,68,58,.08)}50%{box-shadow:0 0 0 6px rgba(36,68,58,.03)}}
+h1.hero-title{
+  margin:22px 0 26px;
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(48px,6.8vw,100px);
+  line-height:1.06;letter-spacing:-.02em;
+}
+h1.hero-title em{font-style:normal;color:var(--green);letter-spacing:-.01em}
+.lede{max-width:38em;margin:0 0 34px;font-size:16px;line-height:1.85;color:var(--muted)}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:48px;padding:0 24px;border-radius:99px;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  border:1px solid transparent;cursor:pointer;
+  transition:transform .45s var(--ease),background .35s,color .35s,border-color .35s,box-shadow .45s;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn.solid{background:var(--ink);color:var(--paper);box-shadow:0 12px 26px -18px rgba(20,16,10,.8)}
+.btn.solid:hover{background:var(--green)}
+.btn.ghost{border-color:var(--line);color:var(--ink);background:transparent}
+.btn.ghost:hover{border-color:var(--ink)}
+.micro{
+  margin:26px 0 0;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);opacity:.78;
+}
+.micro span{margin:0 6px;opacity:.5}
+.nowrap{white-space:nowrap}
+
+/* hero visual */
+.hero-visual{position:relative;display:flex;justify-content:center;align-items:center;padding:24px 8px}
+.ritual-card{
+  position:relative;width:min(404px,100%);aspect-ratio:.82;
+  border-radius:30px;padding:25px 25px 22px;
+  display:flex;flex-direction:column;
+  color:#e9e5d8;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 28% 8%, rgba(148,183,156,.23), transparent 45%),
+    radial-gradient(ellipse at 80% 90%, rgba(196,148,106,.13), transparent 50%),
+    linear-gradient(158deg,#294438 0%,#152a21 52%,#0a1712 100%);
+  box-shadow:
+    0 50px 90px -46px rgba(14,31,24,.62),
+    0 10px 30px -18px rgba(14,31,24,.4),
+    inset 0 1px 0 rgba(255,255,255,.13);
+  transform:rotate(.6deg);
+  transition:transform 1.2s var(--ease);
+}
+.ritual-card:hover{transform:rotate(0deg) translateY(-4px)}
+.ritual-card:after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;opacity:.5;
+}
+.rc-head{display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:.19em;opacity:.65;text-transform:uppercase;position:relative;z-index:2}
+.rc-head b{font-weight:400}
+.rc-live{display:flex;align-items:center;gap:7px}
+.rc-live i{width:5px;height:5px;border-radius:50%;background:#bfd8c2;box-shadow:0 0 6px rgba(191,216,194,.7);animation:dotPulse 2.8s infinite}
+.rc-orb{flex:1;display:grid;place-items:center;position:relative;min-height:180px;z-index:1}
+.rc-core{
+  width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle at 41% 35%,#fbf4e4 0%,#e8ddc4 30%,#cdbfa3 55%,rgba(183,170,143,.14) 72%,transparent 73%);
+  box-shadow:0 0 70px rgba(238,226,196,.28),0 0 140px rgba(238,226,196,.1);
+  animation:breathe 6.5s ease-in-out infinite;
+  position:relative;
+}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.06);opacity:1}}
+.rc-ring{
+  position:absolute;border:1px solid rgba(235,227,207,.14);border-radius:50%;
+  width:228px;height:228px;pointer-events:none;
+}
+.rc-ring.r2{width:300px;height:300px;border-color:rgba(235,227,207,.07)}
+.rc-pupil{
+  position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
+  border-radius:50%;background:#080706;opacity:0;
+  box-shadow:0 0 24px 6px rgba(0,0,0,.5);
+  z-index:2;
+}
+.rc-pupil:after{
+  content:"";position:absolute;left:7px;top:5px;width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,.55);filter:blur(1px);
+}
+.rc-status{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.02em;position:relative;z-index:2}
+.rc-status #rcTimer{font-family:var(--serif);font-size:19px;letter-spacing:.02em;opacity:.86}
+.rc-status #rcState{opacity:.66}
+.wave{display:flex;align-items:center;gap:3px;height:34px;margin:16px 0 20px;opacity:.45;position:relative;z-index:2}
+.wave i{flex:1;display:block;height:20%;border-radius:99px;background:#dfe7dc;transform-origin:center;animation:wave 2.8s ease-in-out infinite alternate}
+@keyframes wave{0%{transform:scaleY(.35)}100%{transform:scaleY(1)}}
+.wave.frantic i{animation-duration:.42s}
+.rc-foot{display:flex;justify-content:space-between;border-top:1px solid rgba(235,227,207,.12);padding-top:15px;font-size:8px;letter-spacing:.17em;opacity:.5;text-transform:uppercase;position:relative;z-index:2}
+.rc-foot b{font-weight:400;opacity:.9}
+.chip{
+  position:absolute;z-index:3;display:flex;flex-direction:column;gap:2px;
+  background:rgba(251,247,239,.86);backdrop-filter:blur(12px);
+  border:1px solid rgba(26,22,17,.1);border-radius:15px;
+  padding:11px 15px;box-shadow:0 20px 36px -26px rgba(30,24,16,.4);
+  transition:transform 1s var(--ease);
+}
+.chip-a{left:-8px;top:44px;transform:rotate(-2deg)}
+.chip-b{right:-14px;bottom:74px;transform:rotate(1.5deg)}
+.ritual-card:hover ~ .chip-a{transform:rotate(-2deg) translateY(-3px)}
+.chip-num{font-family:var(--serif);font-size:22px;line-height:1;letter-spacing:-.02em}
+.chip>span:last-child{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.chip-k{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.chip-v{font-family:var(--serif);font-size:17px;color:var(--green)}
+.scroll-hint{
+  position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;z-index:3;
+  font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  transition:opacity .6s;pointer-events:none;
+}
+.scroll-hint i{width:1px;height:32px;background:linear-gradient(var(--ink),transparent);opacity:.35;animation:hintLine 2.4s ease-in-out infinite}
+@keyframes hintLine{0%,100%{transform:scaleY(.35);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
+.scroll-hint.hidden{opacity:0}
+
+/* LOGOS -------------------------------------------------------------- */
+.logos{
+  display:flex;align-items:center;justify-content:space-between;gap:32px;
+  padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  color:var(--muted);
+}
+.logos>p{margin:0;font-size:10px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;opacity:.6}
+.logo-row{display:flex;align-items:center;gap:clamp(24px,4.5vw,64px);flex-wrap:wrap}
+.logo-row span{
+  font-family:var(--serif);font-size:15px;letter-spacing:.1em;text-transform:uppercase;
+  opacity:.45;white-space:nowrap;
+}
+.logo-row span:nth-child(2){font-style:normal;letter-spacing:.04em;text-transform:none;font-size:18px}
+.logo-row span:nth-child(3){font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.24em}
+.logo-row span:nth-child(4){letter-spacing:.34em;font-size:12px}
+
+/* SHARED SECTION ----------------------------------------------------- */
+section{position:relative;scroll-margin-top:90px}
+#top{scroll-margin-top:0}
+.section-head{display:grid;grid-template-columns:240px minmax(0,1fr);gap:36px;align-items:start;margin-bottom:64px}
+.kicker{
+  margin:6px 0 0;display:flex;align-items:center;gap:14px;
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.kicker .idx{font-family:var(--serif);font-size:12px;letter-spacing:.02em;opacity:.55}
+h2.display{
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:clamp(38px,5.2vw,78px);line-height:1.08;letter-spacing:-.02em;
+  max-width:12em;
+}
+h2.display em{font-style:normal;color:var(--green)}
+
+/* INTRO -------------------------------------------------------------- */
+.intro{padding:170px 0 150px}
+.intro-body{display:grid;grid-template-columns:240px 1fr;gap:36px;align-items:start}
+.intro-lede{
+  margin:0;font-family:var(--serif);font-size:clamp(24px,2.5vw,32px);
+  line-height:1.55;letter-spacing:-.01em;max-width:12em;
+}
+.intro-copy{display:grid;grid-template-columns:1.15fr .85fr;gap:60px;align-items:start}
+.intro-copy p{margin:0;font-size:14px;line-height:1.95;color:var(--muted);max-width:40em}
+.intro-copy p+p{margin-top:18px}
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:32px;
+  margin-top:80px;padding-top:34px;border-top:1px solid var(--line);
+}
+.stat strong{
+  display:block;font-family:var(--serif);font-weight:400;
+  font-size:clamp(36px,4.4vw,62px);line-height:1;letter-spacing:-.03em;
+  margin-bottom:10px;font-variant-numeric:tabular-nums;
+}
+.stat strong span{font-size:.44em;vertical-align:top;margin-left:2px}
+.stat>span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);opacity:.8}
+
+/* METHOD ------------------------------------------------------------- */
+.method{padding:150px 0;background:linear-gradient(180deg,transparent,var(--wash,rgba(221,230,220,.34)) 18%,var(--wash,rgba(221,230,220,.34)) 82%,transparent)}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feature{
+  position:relative;display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:22px;overflow:hidden;
+  background:var(--surface);
+  transition:transform .8s var(--ease),box-shadow .8s var(--ease);
+}
+.feature:hover{transform:translateY(-5px);box-shadow:0 30px 60px -40px rgba(26,22,17,.4)}
+.feature-visual{height:216px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.feature-body{padding:25px 25px 30px;display:flex;flex-direction:column;flex:1}
+.fnum{font-family:var(--serif);font-size:11px;letter-spacing:.1em;color:var(--muted);opacity:.65}
+.feature h3{margin:14px 0 10px;font-family:var(--serif);font-weight:400;font-size:25px;letter-spacing:-.02em}
+.feature p{margin:0;font-size:12.5px;line-height:1.7;color:var(--muted)}
+.v1{background:radial-gradient(ellipse at 50% 62%,#cdd9ca 0%,#e8ede2 36%,#f6f1e7 72%)}
+.v1 .v-ring{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);border:1px solid rgba(36,68,58,.18);border-radius:50%;width:110px;height:110px}
+.v1 .v-ring:nth-child(2){width:170px;height:170px;opacity:.6}
+.v1 .v-ring:nth-child(3){width:240px;height:240px;opacity:.32}
+.v1 .v-dot{position:absolute;left:50%;top:55%;width:46px;height:46px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 38% 34%,#f7f2e6,#a9b9a7);box-shadow:0 10px 30px -8px rgba(36,68,58,.4)}
+.v2{background:linear-gradient(160deg,#f6ede1,#ecdcc9)}
+.v2 svg{position:absolute;inset:0;width:100%;height:100%}
+.v3{background:radial-gradient(ellipse at 50% 42%,#17251f 0%,#0a1210 66%,#070c0a 100%)}
+.ghost{
+  position:absolute;left:50%;bottom:-38px;width:104px;height:148px;transform:translateX(-50%);
+  border-radius:52% 52% 46% 46%/58% 58% 42% 42%;
+  background:radial-gradient(ellipse at 48% 34%,#c7c0ad 0%,#8e8778 40%,rgba(90,84,72,.3) 72%,transparent 78%);
+  filter:blur(4px);opacity:calc(.1 + var(--wake,0)*.55);
+  transition:opacity .3s linear;
+}
+.ghost:before,.ghost:after{
+  content:"";position:absolute;top:47px;width:15px;height:8px;border-radius:50%;
+  background:#090807;filter:blur(2px);opacity:calc(var(--wake,0)*.9);
+}
+.ghost:before{left:22px}.ghost:after{right:22px}
+.ghost .g-mouth{
+  position:absolute;left:50%;bottom:58px;width:20px;height:2.5px;border-radius:50%;
+  background:#0a0806;transform:translateX(-50%);filter:blur(.6px);
+  opacity:calc(var(--wake,0)*.8);
+}
+.v3 .v-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 52%,rgba(174,186,165,.1),transparent 60%)}
+.v3 .v-frame{position:absolute;inset:18px;border:1px solid rgba(220,228,214,.08);border-radius:10px}
+.v3 .v-cap{position:absolute;left:18px;bottom:14px;font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:rgba(232,236,226,.36)}
+
+/* STORIES ------------------------------------------------------------ */
+.stories{padding:160px 0}
+.quote-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+.quote{
+  margin:0;padding:30px 28px 28px;border:1px solid var(--line);border-radius:22px;
+  background:var(--surface);display:flex;flex-direction:column;min-height:300px;
+  transition:transform .8s var(--ease);
+}
+.quote:hover{transform:translateY(-3px)}
+.qmark{font-family:var(--serif);font-size:54px;line-height:.6;color:var(--green);opacity:.32;height:30px}
+.quote blockquote{
+  margin:18px 0 30px;font-family:var(--serif);font-size:21px;line-height:1.65;letter-spacing:0;
+  flex:1;
+}
+.quote figcaption{display:flex;align-items:center;gap:11px;font-size:11px;color:var(--muted)}
+.quote figcaption b{display:block;font-weight:500;color:var(--ink);letter-spacing:.01em}
+.quote figcaption small{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.65;margin-top:3px}
+.avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:12px;color:#f4efe5;flex:0 0 auto}
+.a1{background:linear-gradient(145deg,#8e9b86,#4d6153)}
+.a2{background:linear-gradient(145deg,#b99b83,#7d5f4b)}
+.a3{background:linear-gradient(145deg,#8f8b9c,#56526a)}
+.stories-foot{
+  display:flex;align-items:center;gap:10px;margin-top:30px;
+  font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+}
+.stories-foot .stars{letter-spacing:.2em;color:var(--green);font-size:11px}
+.stories-foot .tiny{opacity:.55;letter-spacing:.04em;text-transform:none;font-style:normal;font-family:var(--sans);font-size:12px}
+
+/* ACCESS ------------------------------------------------------------- */
+.access{padding:150px 0 170px}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin-left:276px}
+.plan{
+  border:1px solid var(--line);border-radius:24px;padding:32px;
+  background:var(--surface);display:flex;flex-direction:column;position:relative;
+}
+.plan.dark{
+  color:#ece9dd;border-color:rgba(255,255,255,.08);
+  background:
+    radial-gradient(ellipse at 82% 4%,rgba(150,184,157,.2),transparent 48%),
+    linear-gradient(158deg,#294438,#13271f 62%,#0b1712);
+  box-shadow:0 40px 80px -50px rgba(15,32,25,.65);
+}
+.plan-tag{
+  position:absolute;top:18px;right:18px;font-size:8px;letter-spacing:.2em;
+  padding:6px 10px;border:1px solid rgba(255,255,255,.16);border-radius:99px;opacity:.6;
+}
+.plan h3{margin:0 0 22px;font-family:var(--serif);font-weight:400;font-size:24px;letter-spacing:-.01em}
+.price{margin:0 0 26px;font-family:var(--serif);font-size:52px;line-height:1;letter-spacing:-.04em}
+.price span{font-family:var(--sans);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-left:7px}
+.plan.dark .price span{color:rgba(236,233,221,.55)}
+.plan ul{list-style:none;margin:0 0 30px;padding:0;display:flex;flex-direction:column;gap:11px;font-size:12px;color:var(--muted);flex:1}
+.plan.dark ul{color:rgba(236,233,221,.65)}
+.plan li{display:flex;gap:10px;align-items:flex-start;line-height:1.8}
+.plan li:before{content:"";width:4px;height:4px;border-radius:50%;background:currentColor;margin-top:6px;flex:0 0 auto;opacity:.6}
+.plan .btn{width:100%}
+.plan.dark .btn{background:#ece9dd;color:#12221b}
+.plan .fine{margin:14px 0 0;font-size:9px;line-height:1.5;letter-spacing:.05em;color:var(--muted);text-align:center;opacity:.7}
+.plan.dark .fine{color:rgba(236,233,221,.4)}
+
+/* FOOTER ------------------------------------------------------------- */
+.footer{border-top:1px solid var(--line);padding-top:70px}
+.footer-grid{display:grid;grid-template-columns:1.3fr .7fr .7fr .7fr;gap:40px;padding-bottom:60px}
+.f-brand p{margin:18px 0 0;font-size:12px;line-height:1.7;color:var(--muted)}
+.f-brand .brand-word{font-size:24px}
+.f-col h4{margin:3px 0 16px;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);opacity:.65;font-weight:500}
+.f-col a{display:block;font-size:11.5px;text-decoration:none;color:var(--muted);margin-bottom:10px;transition:color .3s}
+.f-col a:hover{color:var(--ink)}
+.footer-bottom{
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:18px 0 26px;border-top:1px solid var(--line);
+  font-size:9px;letter-spacing:.1em;color:var(--muted);opacity:.7;
+}
+.endline{
+  padding:230px 5vw 70px;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,rgba(5,4,4,0) 0%,#050404 34%,#050404 100%);
+  color:#ece5d6;
+}
+.endline h2{
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:clamp(64px,12.5vw,190px);line-height:1.02;letter-spacing:-.025em;
+  color:#ece5d6;
+}
+.endline p{margin:52px 0 0;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(236,229,214,.46)}
+.footer-note{
+  padding:0 28px 36px;font-size:9px;line-height:1.8;letter-spacing:.05em;text-transform:uppercase;
+  color:rgba(236,229,214,.3);text-align:center;background:#050404;
+}
+.footer-note .credit{display:block;margin-top:6px;opacity:.6;letter-spacing:.04em;text-transform:none}
+.footer-note .credit a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(236,229,214,.18)}
+
+/* DESCENT ------------------------------------------------------------ */
+.descent{position:relative;height:180vh;background:#050404;color:#e8e1d2;z-index:2}
+.descent-stage{position:sticky;top:0;height:100svh;overflow:hidden;display:grid;place-items:center;isolation:isolate}
+.descent-eye{
+  position:absolute;width:min(70vw,940px);opacity:.13;
+  transform:scaleY(var(--dopen,.05));transform-origin:center;
+  filter:blur(6px);pointer-events:none;z-index:0;
+}
+.descent-eye svg{width:100%;height:auto}
+.descent-label{
+  position:absolute;top:7vh;left:50%;transform:translateX(-50%);
+  font-size:8.5px;letter-spacing:.4em;text-transform:uppercase;color:rgba(232,225,210,.34);
+  white-space:nowrap;
+}
+.dline{
+  position:absolute;z-index:2;width:min(1000px,88vw);text-align:center;
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:clamp(30px,5.2vw,68px);line-height:1.22;letter-spacing:-.015em;
+  opacity:0;will-change:opacity,transform;
+}
+.dline.sub{font-size:clamp(18px,2.2vw,26px);font-style:italic;color:rgba(232,225,210,.55)}
+.descent-hud{
+  position:absolute;bottom:6vh;left:50%;transform:translateX(-50%);
+  font-size:8px;letter-spacing:.34em;text-transform:uppercase;color:rgba(232,225,210,.22);
+  white-space:nowrap;
+}
+
+/* FINALE ------------------------------------------------------------- */
+.finale{position:relative;height:350vh;background:#040303;z-index:2}
+.finale-stage{
+  position:sticky;top:0;height:100svh;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(ellipse at 50% 58%, #100d0a 0%, #070505 52%, #010101 100%);
+}
+.face-wrap{
+  position:absolute;left:50%;top:50%;height:128svh;aspect-ratio:1000/1400;
+  transform:translate(-50%,-50%) scale(.62);transform-origin:50% 50%;
+  opacity:.04;z-index:2;will-change:transform,opacity;pointer-events:none;
+}
+.face-svg{width:100%;height:100%;overflow:visible}
+#faceWrap .eye-gleam{opacity:0}
+#faceWrap .mouth-open{opacity:.95}
+.finale-copy{
+  position:absolute;inset:0;pointer-events:none;
+  display:grid;place-items:center;text-align:center;padding:6vh 5vw;
+  color:#e7e0d0;
+}
+.finale-copy.back{z-index:6;color:rgba(238,232,219,.9);place-items:start center;padding-top:0}
+.finale-copy.front{z-index:6;color:rgba(238,232,219,.82)}
+.fseq{position:absolute;margin:0;opacity:0;will-change:opacity,transform}
+.fseq.one{
+  bottom:10vh;top:auto;font-size:clamp(10px,1.1vw,13px);letter-spacing:.24em;text-transform:uppercase;
+  font-weight:400;color:rgba(238,232,219,.8);
+}
+.fseq.two{
+  top:8vh;transform:none;
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(44px,7.4vw,116px);line-height:1.02;letter-spacing:-.03em;
+  text-shadow:0 2px 30px rgba(0,0,0,.8),0 0 80px rgba(0,0,0,.6);
+}
+.fseq.three{
+  bottom:10vh;top:auto;transform:none;
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(24px,3.4vw,46px);line-height:1.12;letter-spacing:-.02em;
+  color:rgba(238,232,219,.6);
+  text-shadow:0 2px 30px rgba(0,0,0,.8);
+}
+.finale-hud{
+  position:absolute;left:0;right:0;bottom:5vh;z-index:6;
+  display:flex;justify-content:center;gap:22px;
+  font-size:8px;letter-spacing:.34em;text-transform:uppercase;color:rgba(232,225,210,.26);
+  pointer-events:none;
+}
+.finale-hud b{font-weight:400;color:rgba(232,225,210,.5)}
+.redwash{
+  position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 50% 78%, rgba(120,10,4,.55), transparent 62%);
+  mix-blend-mode:screen;
+}
+.finale-flicker{
+  position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;
+  background:rgba(2,1,1,.5);mix-blend-mode:multiply;
+}
+.face-marks{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.face-marks span{
+  position:absolute;width:1px;height:1px;background:#9b9484;border-radius:50%;
+  box-shadow:0 0 40px 20px rgba(160,150,130,.05);
+}
+
+/* scare */
+.scare{
+  position:fixed;inset:0;z-index:400;overflow:hidden;
+  background:#000;
+  visibility:hidden;opacity:0;display:grid;place-items:center;
+}
+.scare.on{visibility:visible;animation:scareShow 2.6s steps(1,end) forwards,scareShake .12s steps(2) infinite}
+.scare-image{
+  position:absolute;inset:0;z-index:2;display:grid;place-items:center;overflow:hidden;
+  background:#000;
+}
+.scare-image:after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(133,18,6,.28), transparent 48%),
+    radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,.72) 78%, #000 100%);
+  mix-blend-mode:multiply;
+}
+.scare-image img{
+  height:106svh;width:auto;max-width:none;
+  filter:contrast(1.14) saturate(.62) brightness(.94) sepia(.1);
+  transform:scale(1.04);
+  will-change:transform;
+}
+.scare.on .scare-image img{animation:maskLunge 2.6s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes maskLunge{
+  0%{transform:scale(1.12)}
+  4%{transform:scale(1.36) rotate(-1deg)}
+  9%{transform:scale(1.2) rotate(.7deg)}
+  16%{transform:scale(1.3) rotate(-.4deg)}
+  100%{transform:scale(1.23)}
+}
+@keyframes scareShow{
+  0%{opacity:0}
+  1.5%{opacity:1}
+  3.4%{opacity:0}
+  5.2%{opacity:1}
+  7%{opacity:.15}
+  8.6%{opacity:1}
+  84%{opacity:1}
+  100%{opacity:0}
+}
+@keyframes scareShake{
+  0%{transform:translate(0,0)}
+  25%{transform:translate(-2px,1px)}
+  50%{transform:translate(2px,-1px)}
+  75%{transform:translate(-1px,-2px)}
+  100%{transform:translate(0,0)}
+}
+.scare-flash{
+  position:absolute;inset:0;z-index:10;background:#fff;opacity:0;
+  pointer-events:none;
+}
+.scare.on .scare-flash{animation:flash 2.6s steps(1) forwards}
+@keyframes flash{
+  0%{opacity:1}
+  2%{opacity:0}
+  4.5%{opacity:1}
+  6.5%{opacity:0}
+  8.5%{opacity:.85}
+  10%{opacity:0}
+  100%{opacity:0}
+}
+.scare-grain{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:.25;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");mix-blend-mode:screen}
+
+/* EPILOGUE ----------------------------------------------------------- */
+.epilogue{
+  position:relative;min-height:100svh;background:#020202;color:#e7e0d1;
+  display:grid;place-items:center;text-align:center;padding:12vh 6vw;overflow:hidden;
+}
+.epi-inner{position:relative;z-index:2}
+.epi-mark{font-family:var(--serif);font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:rgba(231,224,209,.35);margin:0 0 34px}
+.epilogue h2{
+  margin:0;font-family:var(--serif);font-weight:400;
+  font-size:clamp(42px,7.4vw,100px);line-height:1.08;letter-spacing:-.02em;
+}
+.epilogue p{margin:22px 0 52px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(231,224,209,.42)}
+.leave{
+  appearance:none;background:transparent;border:1px solid rgba(231,224,209,.28);
+  color:#e7e0d1;border-radius:99px;padding:15px 44px;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;
+  transition:background .4s,color .4s,transform .4s;
+}
+.leave:hover{background:#e7e0d1;color:#050505;transform:translateY(-2px)}
+.epi-eye{
+  position:absolute;right:6vw;top:9vh;width:68px;opacity:.3;z-index:1;
+  animation:epiBlink 11s infinite;
+}
+@keyframes epiBlink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.04)}98%{transform:scaleY(1)}}
+.epi-glow{position:absolute;left:50%;top:50%;width:70vw;height:70vw;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(120,105,82,.06),transparent 65%);pointer-events:none}
+.whiteout{position:fixed;inset:0;z-index:900;background:#fff;animation:whiteout .55s ease forwards}
+@keyframes whiteout{0%{opacity:0}35%{opacity:1}100%{opacity:1}}
+
+/* text glitch */
+.is-swapping{animation:textSwap .62s steps(1) 1}
+@keyframes textSwap{
+  0%{opacity:1;transform:translate(0,0)}
+  8%{opacity:.35;transform:translate(-2px,1px);filter:blur(.4px)}
+  14%{opacity:1;transform:translate(2px,-1px)}
+  22%{opacity:.55;transform:translate(-1px,0)}
+  30%{opacity:1;transform:translate(0,0)}
+  58%{opacity:.45;transform:translate(1px,1px)}
+  100%{opacity:1;transform:translate(0,0)}
+}
+.is-glitching{animation:microGlitch .5s steps(1) 1}
+@keyframes microGlitch{
+  0%{transform:translate(0);text-shadow:none}
+  12%{transform:translate(-1.5px,.5px);text-shadow:1.5px 0 rgba(160,40,28,.45),-1.5px 0 rgba(30,90,110,.3)}
+  24%{transform:translate(1px,-.5px)}
+  36%{text-shadow:-1px 0 rgba(160,40,28,.35)}
+  48%{transform:translate(0)}
+  100%{text-shadow:none}
+}
+
+/* mobile -------------------------------------------------------------- */
+@media(max-width:1080px){
+  .wrap{width:calc(100% - 56px)}
+  .section-head{grid-template-columns:190px 1fr;gap:24px}
+  .intro-body{grid-template-columns:190px 1fr;gap:24px}
+  .plans{margin-left:214px}
+  .nav-links{gap:22px}
+}
+@media(max-width:860px){
+  .nav{padding:16px 22px}
+  .nav-links{display:none}
+  .brand-word{font-size:18px}
+  .hero{padding-top:120px;min-height:auto}
+  .hero-grid{grid-template-columns:1fr;gap:52px;min-width:0}
+  .hero-copy,.hero-visual{min-width:0}
+  .hero-visual{padding:0 0 16px}
+  .ritual-card{width:100%;max-width:360px;aspect-ratio:.86}
+  .chip-a{left:0}.chip-b{display:none}
+  h2.display{font-size:clamp(34px,9.2vw,44px);line-height:1.15}
+  .scroll-hint{display:none}
+  .logos{flex-direction:column;align-items:flex-start;gap:18px}
+  .logo-row{gap:26px}
+  .section-head,.intro-body{grid-template-columns:1fr;gap:22px}
+  .intro{padding:110px 0 100px}
+  .intro-copy{grid-template-columns:1fr;gap:22px}
+  .stats{grid-template-columns:1fr 1fr;gap:28px;margin-top:54px}
+  .stat:last-child{grid-column:1/-1}
+  .feature-grid{grid-template-columns:1fr}
+  .feature-visual{height:190px}
+  .quote-grid{grid-template-columns:1fr}
+  .quote{min-height:0}
+  .plans{margin-left:0;grid-template-columns:1fr;max-width:none}
+  .method,.stories,.access{padding:100px 0}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
+  .f-brand{grid-column:1/-1}
+  .endline{padding:80px 0 70px}
+  .fseq.two{font-size:clamp(42px,11vw,110px)}
+  .epilogue h2{font-size:clamp(40px,9vw,80px)}
+  #hud{display:none}
+  #whispers{display:none}
+  #sound{right:18px;bottom:18px;padding:7px 11px;font-size:8px}
+  .descent{height:160vh}
+  .dline{width:80vw}
+  .finale{height:330vh}
+  .face-wrap{height:106svh}
+  .finale-copy.back{z-index:6;color:rgba(238,232,219,.94);place-items:start center}
+  .fseq.two{top:8vh;font-size:clamp(38px,12.5vw,80px);line-height:.94;text-shadow:0 2px 30px #000,0 0 80px rgba(0,0,0,.7)}
+  .fseq.one{display:none}
+  .scare-image img{height:88svh}
+  #soundHint{display:none}
+  .finale-hud{font-size:7px;gap:12px}
+  .watcher{display:none}
+  .watcher:first-child{display:block}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .scare{display:none!important}
+  #grain{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div id="grain" aria-hidden="true"></div>
+<div id="dread" aria-hidden="true"></div>
+<div id="vignette" aria-hidden="true"></div>
+<div id="scan" aria-hidden="true"></div>
+<div id="whispers" aria-hidden="true"></div>
+<div id="watchers" aria-hidden="true"></div>
+
+<div id="hud"><span class="dot"></span><span id="hudText">2,400,000 人入睡</span></div>
+<div id="soundHint" aria-hidden="true">建议佩戴耳机</div>
+<button id="sound" type="button" aria-pressed="false" aria-label="开关环境声音">
+  <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  <span id="soundLabel">声音 关</span>
+</button>
+
+<header class="nav" id="nav">
+  <a href="#top" class="brand" aria-label="Somna">
+    <svg class="brand-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 2.6a9.4 9.4 0 1 0 9.4 9.4A7.4 7.4 0 0 1 12 2.6Z" fill="currentColor"/>
+      <circle cx="16.6" cy="16.8" r="1.3" fill="currentColor" opacity=".35"/>
+    </svg>
+    <span class="brand-word" id="brandWord">SOMNA</span>
+  </a>
+  <nav class="nav-links" aria-label="主导航">
+    <a href="#quiet">静境</a>
+    <a href="#method">方法</a>
+    <a href="#stories">故事</a>
+    <a href="#access">方案</a>
+  </nav>
+  <a href="#access" class="nav-cta" id="navCta">今晚开始</a>
+</header>
+
+<main id="site">
+  <section class="hero" id="top">
+    <div class="hero-bg" aria-hidden="true">
+      <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+    </div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot"></span> SOMNA 睡眠系统</p>
+        <h1 class="hero-title">像从前那样<br><em>入睡。</em></h1>
+        <p class="lede">一套温和的夜间仪式，几分钟内让思绪<span class="nowrap">安静下来</span>——让清晨重新像从前一样。</p>
+        <div class="cta-row">
+          <a class="btn solid" href="#access">开始睡得更好</a>
+          <a class="btn ghost" href="#method">看看怎么做</a>
+        </div>
+        <p class="micro">无药物 <span>·</span> 无屏幕 <span>·</span> 无你记不住的梦</p>
+      </div>
+      <div class="hero-visual">
+        <div class="ritual-card" aria-label="SOMNA 今晚的入睡流程预览">
+          <div class="rc-head"><span>SOMNA / 第 <b id="nightNo">041</b> 夜</span><span class="rc-live"><i></i>静息</span></div>
+          <div class="rc-orb">
+            <span class="rc-ring"></span><span class="rc-ring r2"></span>
+            <span class="rc-core"></span>
+            <span class="rc-pupil" id="rcPupil"></span>
+          </div>
+          <div class="rc-status"><span id="rcState">正在放松</span><span id="rcTimer">24:00</span></div>
+          <div class="wave" id="wave" aria-hidden="true"></div>
+          <div class="rc-foot"><span>起效 <b>7 分 12 秒</b></span><span>睡眠评分 <b>98</b></span></div>
+        </div>
+        <div class="chip chip-a"><span class="chip-num" id="chipNum">240万</span><span>人正入睡</span></div>
+        <div class="chip chip-b"><span class="chip-k">深睡</span><span class="chip-v">↑41%</span></div>
+      </div>
+    </div>
+    <div class="scroll-hint" id="scrollHint"><span id="hintText">向下滚，去休息</span><i></i></div>
+  </section>
+
+  <section class="logos wrap" aria-label="媒体报道">
+    <p>媒体报道</p>
+    <div class="logo-row"><span>《静》</span><span>《夜夜》</span><span>《休息与传闻》</span><span>《平静》</span></div>
+  </section>
+
+  <section class="intro wrap" id="quiet">
+    <div class="section-head">
+      <p class="kicker"><span class="idx">01</span> 静境</p>
+      <h2 class="display" data-swap data-text="你不是生来就该这么累。">你不是生来就累。</h2>
+    </div>
+    <div class="intro-body">
+      <p class="intro-lede">睡眠曾经不是一项任务。它曾是你每晚不假思索就抵达的地方。</p>
+      <div class="intro-copy">
+        <div>
+          <p>在通知和天花板之间，那个地方越来越难找。Somna 把它重新搭起来——不靠药物，也不靠强迫，只靠一次缓慢、刻意的下沉。</p>
+          <p data-swap data-text="温暖的重量。低低的声响。一个知道何时停下的声音。每晚，同一扇小门，等你进去。">温暖的重量。低低的声响。一个知道何时停下的声音。每晚，同一扇小门，打开。</p>
+        </div>
+        <div>
+          <p>它不是镇静剂。它是一种仪式：七分钟的重力安静、一层低低的谐波，以及在黎明时轻轻把你送回。无需学习，无需记住。</p>
+          <p style="opacity:.6">大多数会员到第三个晚上就不再注意到它了。也就是那时候，它开始起效。</p>
+        </div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong id="statSleepers">2,400,000</strong><span id="statSleepersLabel">人与 Somna 一同入睡</span></div>
+      <div class="stat"><strong>7分12秒</strong><span>平均入睡时间</span></div>
+      <div class="stat"><strong>96<span>%</span></strong><span>醒来时感觉焕然一新</span></div>
+    </div>
+  </section>
+
+  <section class="method" id="method">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker"><span class="idx">02</span> 方法</p>
+        <h2 class="display" data-swap data-text="三件小事。<br>它们把你留在这里。">三件小事。<br>一个深夜。</h2>
+      </div>
+      <div class="feature-grid">
+        <article class="feature">
+          <div class="feature-visual v1" aria-hidden="true">
+            <span class="v-ring"></span><span class="v-ring"></span><span class="v-ring"></span>
+            <span class="v-dot"></span>
+          </div>
+          <div class="feature-body">
+            <span class="fnum">01</span>
+            <h3>重力安静</h3>
+            <p data-swap data-text="一层均匀而低低的压力，贴着你的呼吸校准。它不会松手。">一层均匀而低低的压力，贴着你的呼吸校准。它对你没有任何要求。</p>
+          </div>
+        </article>
+        <article class="feature">
+          <div class="feature-visual v2" aria-hidden="true">
+            <svg viewBox="0 0 400 216" preserveAspectRatio="none" fill="none">
+              <path d="M0 118 C30 118 34 96 54 96 C74 96 76 128 96 128 C118 128 122 74 146 74 C170 74 174 140 196 140 C218 140 224 104 246 104 C268 104 274 122 296 122 C318 122 324 88 348 88 C372 88 378 112 400 112" stroke="#8f5f42" stroke-width="1.4" opacity=".55"/>
+              <path d="M0 132 C30 132 34 110 54 110 C74 110 76 142 96 142 C118 142 122 88 146 88 C170 88 174 154 196 154 C218 154 224 118 246 118 C268 118 274 136 296 136 C318 136 324 102 348 102 C372 102 378 126 400 126" stroke="#8f5f42" stroke-width="1" opacity=".25"/>
+              <circle cx="200" cy="108" r="64" stroke="#8f5f42" stroke-width="1" opacity=".18"/>
+              <circle cx="200" cy="108" r="92" stroke="#8f5f42" stroke-width="1" opacity=".09"/>
+            </svg>
+          </div>
+          <div class="feature-body">
+            <span class="fnum">02</span>
+            <h3>自适应声音</h3>
+            <p>一层低低的谐波，跟着你的呼吸一起下沉——而且从不真正结束。</p>
+          </div>
+        </article>
+        <article class="feature">
+          <div class="feature-visual v3" aria-hidden="true">
+            <div class="v-glow"></div>
+            <div class="v-frame"></div>
+            <div class="ghost" id="ghost"><span class="g-mouth"></span></div>
+            <span class="v-cap">回忆中 / 凌晨 03:41</span>
+          </div>
+          <div class="feature-body">
+            <span class="fnum">03</span>
+            <h3>晨间回忆</h3>
+            <p data-swap data-text="醒来时清楚知道自己去过哪里。你确实去过某个地方。">醒来时清楚知道自己去过哪里。早晨重新属于你。</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="stories" id="stories">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker"><span class="idx">03</span> 故事</p>
+        <h2 class="display" data-swap data-text="人们还在睡觉。<br>仅此而已。">人们又在睡觉了。</h2>
+      </div>
+      <div class="quote-grid">
+        <figure class="quote">
+          <div class="qmark" aria-hidden="true">“/div>
+          <blockquote data-swap="quote" data-text="头还没碰到枕头我就睡着了。我不记得枕头。">头还没碰到枕头我就睡着了。我已经忘了那是什么感觉。</blockquote>
+          <figcaption><span class="avatar a1">玛</span><span><b>玛拉 · K.</b><small>2023 年加入</small></span></figcaption>
+        </figure>
+        <figure class="quote">
+          <div class="qmark" aria-hidden="true">“/div>
+          <blockquote data-swap="quote" data-text="凌晨三点的寂静以前让我害怕。现在它会叫我的名字。">凌晨三点的寂静以前让我害怕。现在它……被占满了。</blockquote>
+          <figcaption><span class="avatar a2">乔</span><span><b>乔纳斯 · R.</b><small>2024 年加入</small></span></figcaption>
+        </figure>
+        <figure class="quote">
+          <div class="qmark" aria-hidden="true">“/div>
+          <blockquote data-swap="quote" data-text="我不再做梦了。我只是去某个地方。那里很安静。">我不再做梦了。我只是去某个地方。</blockquote>
+          <figcaption><span class="avatar a3">普</span><span><b>普里娅 · S.</b><small>2022 年加入</small></span></figcaption>
+        </figure>
+      </div>
+      <div class="stories-foot"><span class="stars">★★★★★/span> 4.9 / 5 &nbsp;·&nbsp; 18,204 条评价 <span class="tiny">—— 每一条我们都读过。</span></div>
+    </div>
+  </section>
+
+  <section class="access" id="access">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker"><span class="idx">04</span> 方案</p>
+        <h2 class="display" data-swap data-text="休息很简单。<br>它已经是你的了。">休息很简单。<br>这次也一样。</h2>
+      </div>
+      <div class="plans">
+        <article class="plan">
+          <h3>Somna 免费版</h3>
+          <p class="price">$0<span>/ 永久免费</span></p>
+          <ul>
+            <li>每晚一次引导式放松</li>
+            <li>重力安静，基础校准</li>
+            <li>晨间回忆，前七天</li>
+          </ul>
+          <a href="#access" class="btn ghost">今晚开始</a>
+        </article>
+        <article class="plan dark">
+          <span class="plan-tag">大多数夜晚</span>
+          <h3>Somna Plus</h3>
+          <p class="price">$9<span>/ 月</span></p>
+          <ul>
+            <li>免费版的全部内容，每晚可用</li>
+            <li>会学习你房间的自适应声音</li>
+            <li>深睡报告，黎明时读给你听</li>
+            <li>优先进入静境</li>
+          </ul>
+          <a href="#access" class="btn light">今晚开始</a>
+          <p class="fine" data-swap data-text="随时取消。取消并不等于醒来。">随时取消。无需任何理由。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap footer-grid">
+      <div class="f-brand">
+        <span class="brand-word">SOMNA</span>
+        <p>睡眠不是任务。<br>它是一个地方。</p>
+      </div>
+      <div class="f-col"><h4>产品</h4><a href="#method">仪式</a><a href="#access">方案</a><a href="#">设备</a></div>
+      <div class="f-col"><h4>公司</h4><a href="#">科学</a><a href="#">招聘</a><a href="#">媒体</a></div>
+      <div class="f-col"><h4>联系</h4><a href="#">帮助</a><a href="#">隐私</a><a href="#">条款</a></div>
+    </div>
+    <div class="wrap footer-bottom"><span>© 2026 Somna Labs, Inc. 保留所有权利。</span><span>为黑暗而生。</span></div>
+    <div class="endline">
+      <h2 data-swap data-text="别。">睡个好觉。</h2>
+      <p>今晚见。</p>
+    </div>
+    <div class="footer-note">Somna 不是医疗器械。请勿在睡眠中操作重型机械。 <span class="credit">面具照片：<a href="https://commons.wikimedia.org/wiki/File:Hannya,_British_Museum.jpg">Jl FilpoC</a> 摄，<a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>，已裁剪。</span></div>
+  </footer>
+</main>
+
+<section class="descent" id="descent">
+  <div class="descent-stage">
+    <div class="descent-eye" id="descentEye" aria-hidden="true">
+      <svg viewBox="0 0 900 420" fill="none">
+        <path d="M30 210Q450 -40 870 210Q450 460 30 210Z" fill="#d9d1c0" opacity=".55"/>
+        <circle cx="450" cy="210" r="112" fill="#171310"/>
+        <circle cx="450" cy="210" r="52" fill="#000"/>
+        <circle cx="418" cy="176" r="17" fill="#f2ecdd" opacity=".55"/>
+        <path d="M30 210Q450 -40 870 210" stroke="#0b0908" stroke-width="10" opacity=".65"/>
+      </svg>
+    </div>
+    <p class="descent-label">SOMNA / 静境之下</p>
+    <p class="dline" data-dline>你可以停止滚动了。</p>
+    <p class="dline" data-dline>已经太晚了。</p>
+    <p class="dline" data-dline>页面底下有东西。</p>
+    <p class="dline" data-dline>它一直在这里。</p>
+    <p class="descent-hud">继续向下</p>
+  </div>
+</section>
+
+<section class="finale" id="finale">
+  <div class="finale-stage" id="finaleStage">
+    <div class="face-marks" aria-hidden="true">
+      <span style="left:18%;top:22%"></span><span style="left:73%;top:32%"></span><span style="left:38%;top:74%"></span><span style="left:82%;top:66%"></span><span style="left:12%;top:58%"></span>
+    </div>
+
+    <div class="face-wrap" id="faceWrap">
+      <svg class="face-svg" viewBox="0 0 1000 1400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <radialGradient id="skinBase" cx="50%" cy="62%" r="68%">
+            <stop offset="0%" stop-color="#c9bea8"/>
+            <stop offset="34%" stop-color="#b8ac96"/>
+            <stop offset="62%" stop-color="#9d917c"/>
+            <stop offset="84%" stop-color="#6b6152"/>
+            <stop offset="100%" stop-color="#17130f"/>
+          </radialGradient>
+          <radialGradient id="foreheadGlow" cx="46%" cy="38%" r="58%">
+            <stop offset="0%" stop-color="#f4eddc" stop-opacity=".3"/>
+            <stop offset="55%" stop-color="#e5ddca" stop-opacity=".06"/>
+            <stop offset="100%" stop-color="#e5ddca" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="underGlow" cx="49%" cy="78%" r="52%">
+            <stop offset="0%" stop-color="#f2e6cb" stop-opacity=".55"/>
+            <stop offset="55%" stop-color="#d9c8a9" stop-opacity=".18"/>
+            <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="topDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#000" stop-opacity=".94"/>
+            <stop offset="38%" stop-color="#000" stop-opacity=".68"/>
+            <stop offset="62%" stop-color="#000" stop-opacity=".3"/>
+            <stop offset="80%" stop-color="#000" stop-opacity=".04"/>
+            <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="headShade" x1="18%" y1="0%" x2="92%" y2="100%">
+            <stop offset="0%" stop-color="#000" stop-opacity=".1"/>
+            <stop offset="46%" stop-color="#000" stop-opacity=".16"/>
+            <stop offset="74%" stop-color="#000" stop-opacity=".44"/>
+            <stop offset="100%" stop-color="#000" stop-opacity=".82"/>
+          </linearGradient>
+          <radialGradient id="socketFall" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#000" stop-opacity=".98"/>
+            <stop offset="62%" stop-color="#030202" stop-opacity=".92"/>
+            <stop offset="100%" stop-color="#090706" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="mawGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#000"/>
+            <stop offset="54%" stop-color="#030101"/>
+            <stop offset="85%" stop-color="#180303"/>
+            <stop offset="100%" stop-color="#2e0707"/>
+          </linearGradient>
+          <linearGradient id="toothGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#948873"/>
+            <stop offset="100%" stop-color="#373025"/>
+          </linearGradient>
+          <radialGradient id="edgeFade" cx="50%" cy="46%" r="58%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="56%" stop-color="#fff"/>
+            <stop offset="80%" stop-color="#fff" stop-opacity=".45"/>
+            <stop offset="100%" stop-color="#000"/>
+          </radialGradient>
+          <linearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#000" stop-opacity="0"/>
+            <stop offset="35%" stop-color="#000" stop-opacity=".62"/>
+            <stop offset="100%" stop-color="#000" stop-opacity="1"/>
+          </linearGradient>
+          <filter id="blurBig" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="44"/></filter>
+          <filter id="blurMed" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="18"/></filter>
+          <filter id="blurSock" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="24"/></filter>
+          <filter id="blurSoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4.5"/></filter>
+          <filter id="distort" x="-12%" y="-12%" width="124%" height="124%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.008" numOctaves="2" seed="11" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <mask id="faceMask">
+            <rect width="1000" height="1400" fill="url(#edgeFade)"/>
+          </mask>
+        </defs>
+
+        <g mask="url(#faceMask)">
+          <!-- shoulders, fading into the dark -->
+          <path d="M190,1400 C225,1250 320,1170 402,1132 L598,1132 C680,1170 775,1250 810,1400 Z" fill="#050404"/>
+          <path d="M402,1132 C432,1214 420,1280 380,1400 L620,1400 C580,1280 568,1214 598,1132 Z" fill="#0b0907" opacity=".65"/>
+          <path d="M330,1316 C376,1246 438,1206 500,1206 C562,1206 624,1246 670,1316" fill="none" stroke="#6c5f4d" stroke-width="2" opacity=".1" filter="url(#blurSoft)"/>
+
+          <g>
+            <path d="M500,150 C604,148 678,214 702,330 C724,438 716,550 700,660 C684,780 648,910 604,1035 C574,1125 544,1188 500,1206 C456,1188 426,1125 396,1035 C352,910 316,780 300,660 C284,550 276,438 298,330 C322,214 396,148 500,150 Z" fill="url(#skinBase)"/>
+
+            <ellipse cx="430" cy="345" rx="205" ry="245" fill="url(#foreheadGlow)" opacity=".9"/>
+            <ellipse cx="671" cy="655" rx="150" ry="330" fill="#000" opacity=".3" filter="url(#blurBig)"/>
+            <ellipse cx="500" cy="1090" rx="170" ry="120" fill="#000" opacity=".42" filter="url(#blurBig)"/>
+            <ellipse cx="342" cy="700" rx="66" ry="190" fill="#0f0b08" opacity=".26" filter="url(#blurBig)"/>
+            <ellipse cx="655" cy="735" rx="80" ry="210" fill="#000" opacity=".35" filter="url(#blurBig)"/>
+            <ellipse cx="500" cy="430" rx="165" ry="100" fill="#f0e8d6" opacity=".09" filter="url(#blurBig)"/>
+            <ellipse cx="480" cy="965" rx="270" ry="300" fill="url(#underGlow)"/>
+            <ellipse cx="500" cy="1130" rx="150" ry="95" fill="#e6d6b9" opacity=".14" filter="url(#blurBig)"/>
+
+            <path d="M300,420 Q390,370 485,415" stroke="#1a130e" stroke-width="34" fill="none" opacity=".14" filter="url(#blurBig)"/>
+            <path d="M520,410 Q620,370 705,425" stroke="#1a130e" stroke-width="30" fill="none" opacity=".12" filter="url(#blurBig)"/>
+
+            <g class="eyes">
+              <path d="M292,470 C318,412 408,398 465,440 C486,458 470,500 430,518 C370,544 308,520 292,470 Z" fill="#000" opacity=".88" filter="url(#blurSock)"/>
+              <path d="M538,442 C575,398 660,400 706,452 C720,474 692,508 650,522 C598,538 546,500 538,442 Z" fill="#000" opacity=".84" filter="url(#blurSock)"/>
+              <path d="M300,470 C330,428 404,420 452,452 C430,486 350,510 300,470 Z" fill="#000" opacity=".82" filter="url(#blurMed)"/>
+              <path d="M545,450 C580,420 650,420 692,458 C660,490 592,508 545,450 Z" fill="#000" opacity=".78" filter="url(#blurMed)"/>
+              <ellipse class="eye-gleam" cx="390" cy="488" rx="12" ry="6" fill="#cfc5b2" filter="url(#blurSoft)"/>
+              <ellipse class="eye-gleam" cx="614" cy="478" rx="10" ry="5" fill="#cfc5b2" filter="url(#blurSoft)"/>
+              <path d="M300,462 C330,420 408,412 458,446" stroke="#5b5042" stroke-width="2" opacity=".24" fill="none" filter="url(#blurSoft)"/>
+              <path d="M545,446 C585,414 655,414 696,452" stroke="#5b5042" stroke-width="2" opacity=".19" fill="none" filter="url(#blurSoft)"/>
+              <path d="M318,512 C356,532 416,522 448,492" stroke="#d8cbb4" stroke-width="1.6" opacity=".16" fill="none" filter="url(#blurSoft)"/>
+              <path d="M560,498 C596,518 650,512 686,478" stroke="#d8cbb4" stroke-width="1.4" opacity=".12" fill="none" filter="url(#blurSoft)"/>
+              <ellipse cx="390" cy="536" rx="75" ry="34" fill="#1a110c" opacity=".22" filter="url(#blurMed)"/>
+              <ellipse cx="612" cy="526" rx="70" ry="30" fill="#1a110c" opacity=".2" filter="url(#blurMed)"/>
+            </g>
+
+            <g class="tears" fill="none" stroke="#030202" opacity="0">
+              <path d="M388,524 C382,592 392,664 380,742 C375,792 366,838 358,884" stroke-width="10" filter="url(#blurSoft)"/>
+              <path d="M618,516 C624,584 616,656 630,732 C636,778 642,824 650,868" stroke-width="9" filter="url(#blurSoft)"/>
+              <path d="M404,534 C400,596 408,660 400,720" stroke-width="3" opacity=".7" filter="url(#blurSoft)"/>
+              <path d="M628,524 C630,580 626,632 634,686" stroke-width="2.5" opacity=".6" filter="url(#blurSoft)"/>
+              <path d="M384,540 C380,600 388,660 378,730" stroke="#c9ba9f" stroke-width="1.2" opacity=".18"/>
+            </g>
+
+            <path d="M503,525 C499,610 496,680 486,734 C494,752 514,754 523,734 C513,680 510,610 508,525 Z" fill="#241c14" opacity=".34" filter="url(#blurMed)"/>
+            <ellipse cx="470" cy="746" rx="13" ry="8" fill="#060403" opacity=".66" filter="url(#blurSoft)"/>
+            <ellipse cx="532" cy="749" rx="13" ry="8" fill="#060403" opacity=".6" filter="url(#blurSoft)"/>
+            <path d="M478,734 Q502,754 524,732" stroke="#050302" stroke-width="3" opacity=".5" fill="none" filter="url(#blurSoft)"/>
+            <path d="M493,535 C500,610 501,675 496,722" stroke="#f1e8d6" stroke-width="8" opacity=".09" filter="url(#blurMed)"/>
+            <ellipse cx="501" cy="726" rx="20" ry="8" fill="#f2e4c8" opacity=".12" filter="url(#blurSoft)"/>
+            <path d="M454,764 Q500,790 546,762" stroke="#3a2a20" stroke-width="3" opacity=".14" fill="none" filter="url(#blurSoft)"/>
+
+            <path d="M500,772 L500,842" stroke="#1b120c" stroke-width="4" opacity=".16" filter="url(#blurSoft)"/>
+
+            <path class="mouth-line" d="M400,900 C455,924 552,926 602,894" stroke="#160d0a" stroke-width="4.5" fill="none" stroke-linecap="round" opacity=".72" filter="url(#blurSoft)"/>
+            <path d="M414,924 C465,942 540,940 588,918" stroke="#e9ddc8" stroke-width="2" fill="none" opacity=".13" filter="url(#blurSoft)"/>
+
+            <g class="mouth-open" transform="translate(500 920) scale(0.55 0.02)">
+              <path d="M-149,-16 C-104,-50 -46,-28 2,-35 C62,-44 118,-58 157,-8 C126,52 112,126 52,196 C14,238 -34,230 -78,188 C-124,142 -144,62 -149,-16 Z" fill="url(#mawGrad)"/>
+              <ellipse cx="0" cy="-16" rx="112" ry="64" fill="#000" opacity=".78" filter="url(#blurMed)"/>
+              <ellipse cx="18" cy="160" rx="78" ry="52" fill="#2a0606" opacity=".55" filter="url(#blurMed)"/>
+              <path d="M-138,-18 C-102,-46 -50,-30 2,-37 C60,-46 108,-52 144,-12" stroke="#7a5b4d" stroke-width="4" opacity=".22" fill="none" filter="url(#blurSoft)"/>
+              <path d="M-116,178 C-66,214 -18,220 48,186" stroke="#d9c9ae" stroke-width="2" opacity=".1" fill="none" filter="url(#blurSoft)"/>
+              <path d="M-120,20 Q-90,120 -30,170" stroke="#6a4a3f" stroke-width="2" opacity=".18" fill="none" filter="url(#blurSoft)"/>
+              <path d="M130,16 Q100,118 40,168" stroke="#6a4a3f" stroke-width="2" opacity=".15" fill="none" filter="url(#blurSoft)"/>
+              <ellipse cx="14" cy="104" rx="62" ry="42" fill="#4a0b08" opacity=".2" filter="url(#blurMed)"/>
+            </g>
+
+            <path d="M378,934 Q350,972 340,1010" stroke="#1d120d" stroke-width="3" fill="none" opacity=".22" filter="url(#blurSoft)"/>
+            <path d="M622,930 Q648,966 656,1004" stroke="#1d120d" stroke-width="3" fill="none" opacity=".2" filter="url(#blurSoft)"/>
+            <g class="stretch" fill="none" stroke="#140c09" stroke-linecap="round" opacity="0">
+              <path d="M352,916 Q306,910 276,878" stroke-width="2.5" filter="url(#blurSoft)"/>
+              <path d="M344,944 Q296,952 264,994" stroke-width="3.5" filter="url(#blurSoft)"/>
+              <path d="M648,910 Q694,904 724,874" stroke-width="2.5" filter="url(#blurSoft)"/>
+              <path d="M656,940 Q704,948 734,988" stroke-width="3.5" filter="url(#blurSoft)"/>
+              <path d="M362,972 Q330,1002 318,1034" stroke-width="2" opacity=".7" filter="url(#blurSoft)"/>
+              <path d="M638,970 Q670,998 682,1030" stroke-width="2" opacity=".7" filter="url(#blurSoft)"/>
+            </g>
+
+            <g stroke="#4c2a25" fill="none" opacity=".17" filter="url(#blurSoft)">
+              <path d="M330,378 q30,50 18,112 q-6,36 10,66"/>
+              <path d="M682,360 q-24,60 -10,118"/>
+              <path d="M318,790 q34,26 46,80"/>
+              <path d="M690,820 q-28,18 -40,60"/>
+              <path d="M468,250 q-12,44 2,74"/>
+            </g>
+            <g fill="#1c1510" opacity=".06">
+              <ellipse cx="365" cy="610" rx="28" ry="18"/>
+              <ellipse cx="640" cy="590" rx="22" ry="15"/>
+              <ellipse cx="520" cy="640" rx="16" ry="10"/>
+            </g>
+
+            <path d="M500,150 C604,148 678,214 702,330 C724,438 716,550 700,660 C684,780 648,910 604,1035 C574,1125 544,1188 500,1206 C456,1188 426,1125 396,1035 C352,910 316,780 300,660 C284,550 276,438 298,330 C322,214 396,148 500,150 Z" fill="url(#topDark)" opacity=".96"/>
+            <path d="M500,150 C604,148 678,214 702,330 C724,438 716,550 700,660 C684,780 648,910 604,1035 C574,1125 544,1188 500,1206 C456,1188 426,1125 396,1035 C352,910 316,780 300,660 C284,550 276,438 298,330 C322,214 396,148 500,150 Z" fill="url(#headShade)" opacity=".94"/>
+            <path d="M312,360 C290,470 296,610 322,750 C345,870 370,985 405,1080" stroke="#ded3bf" stroke-width="4" fill="none" opacity=".12" filter="url(#blurSoft)"/>
+            <path d="M500,160 C430,165 370,200 335,265" stroke="#f0e7d4" stroke-width="3" fill="none" opacity=".11" filter="url(#blurSoft)"/>
+          </g>
+          <rect x="0" y="990" width="1000" height="410" fill="url(#bottomFade)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="redwash" id="redwash"></div>
+    <div class="finale-flicker" id="finaleFlicker"></div>
+
+    <div class="finale-copy back" aria-hidden="true">
+      <h2 class="fseq two" id="fseq2">不要<br>闭眼</h2>
+    </div>
+    <div class="finale-copy front" aria-hidden="true">
+      <p class="fseq one" id="fseq1">SOMNA 想给你看样东西</p>
+    </div>
+
+    <div class="finale-hud"><span>SOMNA / 静境之下</span><b id="finalePct">00</b></div>
+  </div>
+</section>
+
+<section class="epilogue" id="epilogue">
+  <div class="epi-glow" aria-hidden="true"></div>
+  <svg class="epi-eye" id="epiEye" viewBox="0 0 120 70" aria-hidden="true">
+    <path d="M4 35Q60 -8 116 35Q60 78 4 35Z" fill="#ddd5c4" opacity=".75"/>
+    <circle cx="60" cy="35" r="15" fill="#15110d"/>
+    <circle cx="60" cy="35" r="6" fill="#000"/>
+    <circle cx="54" cy="29" r="3.4" fill="#fff" opacity=".6"/>
+  </svg>
+  <div class="epi-inner">
+    <p class="epi-mark">SOMNA</p>
+    <h2>你还醒着。</h2>
+    <p>暂时。</p>
+    <button class="leave" id="leaveBtn">离开</button>
+  </div>
+</section>
+
+<div class="scare" id="scare" aria-hidden="true">
+  <div class="scare-image"><img src="assets/hannya.jpg" alt=""></div>
+  <div class="scare-grain"></div>
+  <div class="scare-flash"></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  const root = document.documentElement;
+  const nav = $('#nav');
+  const site = $('#site');
+  const brandWord = $('#brandWord');
+  const navCta = $('#navCta');
+  const hud = $('#hud');
+  const hudText = $('#hudText');
+  const soundBtn = $('#sound');
+  const soundLabel = $('#soundLabel');
+  const soundHint = $('#soundHint');
+  const grain = $('#grain');
+  const vignette = $('#vignette');
+  const dread = $('#dread');
+  const scan = $('#scan');
+  const whispersWrap = $('#whispers');
+  const watchersWrap = $('#watchers');
+  const descent = $('#descent');
+  const descentEye = $('#descentEye');
+  const finale = $('#finale');
+  const finaleStage = $('#finaleStage');
+  const faceWrap = $('#faceWrap');
+  const redwash = $('#redwash');
+  const flicker = $('#finaleFlicker');
+  const fseq1 = $('#fseq1');
+  const fseq2 = $('#fseq2');
+  const finalePct = $('#finalePct');
+  const scare = $('#scare');
+  const epilogue = $('#epilogue');
+  const scrollHint = $('#scrollHint');
+  const hintText = $('#hintText');
+  const statSleepers = $('#statSleepers');
+  const statSleepersLabel = $('#statSleepersLabel');
+  const ghost = $('#ghost');
+  const rcPupil = $('#rcPupil');
+  const wave = $('#wave');
+  const rcState = $('#rcState');
+  const rcTimer = $('#rcTimer');
+  const nightNo = $('#nightNo');
+  const chipNum = $('#chipNum');
+  const leaveBtn = $('#leaveBtn');
+  const favicon = $('#favicon');
+  const dlines = $$('[data-dline]');
+  const endlineEl = $('.endline');
+
+  const state = {
+    mad: 0, f: 0, d: 0, scared: false,
+    lastDark: -1, lastTitle: -1, lastBrand: -1, lastHud: '',
+    lastStat: -1, lastLabel: -1, navHidden: null, scrolled: null,
+    mx: 0, my: 0, lastScareCheck: 0, navBg: ''
+  };
+
+  /* ----------------------------------------------------------------
+     ATMOSPHERE
+  ---------------------------------------------------------------- */
+  (function buildGrain() {
+    const size = 150;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.random() * 255;
+      img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v;
+      img.data[i + 3] = Math.random() * 90;
+    }
+    ctx.putImageData(img, 0, 0);
+    grain.style.backgroundImage = `url(${c.toDataURL('image/png')})`;
+  })();
+
+  (function buildWave() {
+    const n = 30;
+    for (let i = 0; i < n; i++) {
+      const bar = document.createElement('i');
+      bar.style.animationDelay = `${-Math.random() * 3}s`;
+      bar.style.animationDuration = `${rand(2.1, 3.6)}s`;
+      wave.appendChild(bar);
+    }
+  })();
+
+  /* whispers */
+  const whisperPhrases = [
+    '再待一会儿', '这页上不止你一个', '它站在光原来在的地方',
+    '别回头看', '我们数过你', '房间变小了', '你早该停下',
+    '它知道你正在读', '七分钟就够了', '枕头记得你的重量'
+  ];
+  const whisperZones = [[3, 18], [97, 18], [3, 58], [97, 58], [3, 84], [97, 84], [3, 34], [97, 34]];
+  const whisperEls = [];
+  for (let i = 0; i < 6; i++) {
+    const el = document.createElement('span');
+    el.className = 'whisper';
+    el.textContent = '';
+    whispersWrap.appendChild(el);
+    whisperEls.push(el);
+  }
+  function cycleWhispers() {
+    whisperEls.forEach(el => { el.style.opacity = '0'; });
+    window.setTimeout(() => {
+      const order = Array.from({ length: whisperEls.length }, (_, i) => i).sort(() => Math.random() - 0.5);
+      const zones = whisperZones.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+      whisperEls.forEach(el => { el.style.opacity = '0'; });
+      order.slice(0, 3).forEach((elIdx, k) => {
+        const el = whisperEls[elIdx];
+        const zone = zones[k];
+        const right = zone[0] > 50;
+        el.textContent = whisperPhrases[Math.floor(Math.random() * whisperPhrases.length)];
+        el.style.left = right ? 'auto' : '0.2vw';
+        el.style.right = right ? '0.2vw' : 'auto';
+        el.style.textAlign = right ? 'right' : 'left';
+        el.style.top = `${zone[1] + rand(-2, 2)}vh`;
+        el.style.opacity = '1';
+      });
+    }, 800);
+    window.setTimeout(cycleWhispers, rand(6200, 8600));
+  }
+  cycleWhispers();
+
+  /* watchers */
+  const watcherCfg = [
+    { left: '2.5vw', top: '33vh', w: 64, at: 0.17, mirror: false },
+    { left: '96vw', top: '58vh', w: 50, at: 0.27, mirror: true },
+    { left: '5vw', top: '81vh', w: 40, at: 0.35, mirror: false },
+    { left: '93vw', top: '19vh', w: 54, at: 0.43, mirror: true },
+    { left: '49vw', top: '97vh', w: 42, at: 0.52, mirror: false },
+    { left: '8vw', top: '9vh', w: 34, at: 0.6, mirror: false }
+  ];
+  const watchers = watcherCfg.map(cfg => {
+    const el = document.createElement('div');
+    el.className = 'watcher';
+    el.style.setProperty('--w', `${cfg.w}px`);
+    el.style.left = cfg.left;
+    el.style.top = cfg.top;
+    el.innerHTML = `
+      <svg viewBox="0 0 120 70" aria-hidden="true">
+        <g class="eye-shell">
+          <path d="M4 35Q60 -6 116 35Q60 76 4 35Z" fill="#f2ebdd" opacity=".6"/>
+          <path d="M4 35Q60 0 116 35Q60 67 4 35Z" fill="#2a2119" opacity=".13"/>
+          <ellipse cx="60" cy="35" rx="19" ry="17" fill="#17120d" opacity=".92"/>
+          <circle cx="60" cy="35" r="8" fill="#000"/>
+          <circle cx="55" cy="29" r="2.8" fill="#fff" opacity=".32"/>
+          <path d="M4 35Q60 -6 116 35" stroke="#241b14" stroke-width="1.2" fill="none" opacity=".22"/>
+        </g>
+      </svg>`;
+    if (cfg.mirror) el.querySelector('svg').style.transform = 'scaleX(-1)';
+    watchersWrap.appendChild(el);
+    return { el, cfg, pupil: el.querySelector('.pupil'), nextBlink: performance.now() + rand(2000, 9000), shown: 0 };
+  });
+  window.setInterval(() => {
+    const now = performance.now();
+    watchers.forEach(w => {
+      if (w.shown < 0.08) return;
+      if (now > w.nextBlink) {
+        w.el.classList.add('blink');
+        window.setTimeout(() => w.el.classList.remove('blink'), 130);
+        w.nextBlink = now + rand(4500, 13000);
+      }
+    });
+  }, 900);
+
+  /* ----------------------------------------------------------------
+     AUDIO (opt-in)
+  ---------------------------------------------------------------- */
+  const audio = { ctx: null, master: null, droneGain: null, droneFilter: null, noiseGain: null, tensionGain: null, tensionOsc: null, on: false, hb: null, noiseBuffer: null };
+  function initAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    const ctx = new AC();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+
+    const droneGain = ctx.createGain();
+    droneGain.gain.value = 0.07;
+    const droneFilter = ctx.createBiquadFilter();
+    droneFilter.type = 'lowpass';
+    droneFilter.frequency.value = 240;
+    droneFilter.Q.value = 0.8;
+    droneGain.connect(droneFilter);
+    droneFilter.connect(master);
+
+    [[48, 'sawtooth', 0.32], [55.3, 'sine', 0.6], [82.1, 'triangle', 0.18], [110.4, 'sine', 0.08]].forEach(([f, type, g]) => {
+      const o = ctx.createOscillator();
+      o.type = type; o.frequency.value = f;
+      const og = ctx.createGain(); og.gain.value = g;
+      o.connect(og); og.connect(droneGain); o.start();
+    });
+
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const nsrc = ctx.createBufferSource();
+    nsrc.buffer = buf; nsrc.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 900; nf.Q.value = 0.5;
+    const ng = ctx.createGain(); ng.gain.value = 0.018;
+    nsrc.connect(nf); nf.connect(ng); ng.connect(master); nsrc.start();
+
+    const tensionOsc = ctx.createOscillator();
+    tensionOsc.type = 'sine'; tensionOsc.frequency.value = 196;
+    const tensionGain = ctx.createGain(); tensionGain.gain.value = 0;
+    tensionOsc.connect(tensionGain); tensionGain.connect(master); tensionOsc.start();
+
+    audio.ctx = ctx; audio.master = master; audio.droneGain = droneGain;
+    audio.droneFilter = droneFilter; audio.noiseGain = ng;
+    audio.tensionGain = tensionGain; audio.tensionOsc = tensionOsc;
+    audio.noiseBuffer = buf;
+    return true;
+  }
+  function playThump(when, amp, freq) {
+    const ctx = audio.ctx; if (!ctx) return;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, when);
+    o.frequency.exponentialRampToValueAtTime(26, when + 0.22);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(amp, when + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.3);
+    o.connect(g); g.connect(audio.master);
+    o.start(when); o.stop(when + 0.32);
+  }
+  function heartbeat() {
+    if (!audio.on || !audio.ctx) return;
+    const t = audio.ctx.currentTime;
+    const intensity = clamp(0.12 + state.mad * 0.22 + state.f * 0.28, 0.1, 0.55);
+    playThump(t, intensity, 54);
+    playThump(t + 0.155, intensity * 0.62, 47);
+    const tempo = clamp(1250 - state.mad * 420 - state.f * 430, 360, 1300);
+    clearTimeout(audio.hb);
+    audio.hb = window.setTimeout(heartbeat, tempo);
+  }
+  function toggleSound() {
+    if (!audio.ctx && !initAudio()) return;
+    if (audio.ctx.state === 'suspended') audio.ctx.resume();
+    audio.on = !audio.on;
+    soundBtn.classList.toggle('on', audio.on);
+    soundBtn.setAttribute('aria-pressed', String(audio.on));
+    soundLabel.textContent = audio.on ? '声音 开' : '声音 关';
+    soundHint.classList.remove('show');
+    soundHint.classList.add('hidden');
+    const t = audio.ctx.currentTime;
+    audio.master.gain.cancelScheduledValues(t);
+    audio.master.gain.setValueAtTime(audio.master.gain.value, t);
+    audio.master.gain.linearRampToValueAtTime(audio.on ? 0.5 : 0, t + 0.9);
+    if (audio.on) {
+      clearTimeout(audio.hb);
+      heartbeat();
+    }
+  }
+  soundBtn.addEventListener('click', toggleSound);
+  window.setTimeout(() => {
+    if (!audio.on && window.scrollY < 40) soundHint.classList.add('show');
+  }, 1800);
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 40) soundHint.classList.remove('show');
+  }, { passive: true });
+  window.setTimeout(() => soundHint.classList.remove('show'), 12000);
+
+  function scareSound() {
+    if (!audio.on || !audio.ctx) return;
+    const ctx = audio.ctx, t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = audio.noiseBuffer;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.6;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.5, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+    src.connect(bp); bp.connect(g); g.connect(audio.master);
+    src.start(t); src.stop(t + 1.4);
+
+    const boom = ctx.createOscillator();
+    boom.type = 'sine';
+    boom.frequency.setValueAtTime(72, t);
+    boom.frequency.exponentialRampToValueAtTime(20, t + 1.5);
+    const bg = ctx.createGain();
+    bg.gain.setValueAtTime(0.0001, t);
+    bg.gain.linearRampToValueAtTime(0.7, t + 0.03);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.7);
+    boom.connect(bg); bg.connect(audio.master);
+    boom.start(t); boom.stop(t + 1.8);
+
+    const scream = ctx.createOscillator();
+    scream.type = 'sawtooth';
+    scream.frequency.setValueAtTime(760, t + 0.01);
+    scream.frequency.exponentialRampToValueAtTime(240, t + 0.7);
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.linearRampToValueAtTime(0.055, t + 0.03);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+    scream.connect(sg); sg.connect(audio.master);
+    scream.start(t); scream.stop(t + 0.9);
+  }
+
+  /* ----------------------------------------------------------------
+     SCARE FACE CLONE
+  ---------------------------------------------------------------- */
+
+
+  function triggerScare() {
+    if (state.scared) return;
+    state.scared = true;
+    if (reduced) return;
+    scare.classList.remove('on');
+    void scare.offsetWidth;
+    scare.classList.add('on');
+    scareSound();
+    window.setTimeout(() => scare.classList.remove('on'), 2750);
+  }
+
+  /* ----------------------------------------------------------------
+     SWAPS
+  ---------------------------------------------------------------- */
+  const swappers = $$('[data-swap]').map(el => ({
+    el, done: false, html: el.dataset.text || el.innerHTML, since: 0
+  }));
+  function checkSwaps() {
+    const vh = window.innerHeight;
+    const now = performance.now();
+    for (const s of swappers) {
+      if (s.done) continue;
+      const r = s.el.getBoundingClientRect();
+      const visible = r.top < vh * 0.55 && r.bottom > vh * 0.06;
+      if (!visible) { s.since = 0; continue; }
+      if (!s.since) s.since = now;
+      if (now - s.since < 1750) continue;
+      s.done = true;
+      s.el.classList.add('is-swapping');
+      window.setTimeout(() => {
+        s.el.innerHTML = s.html;
+        window.setTimeout(() => s.el.classList.remove('is-swapping'), 620);
+      }, 160);
+    }
+  }
+
+  /* ----------------------------------------------------------------
+     TITLES / FAVICON
+  ---------------------------------------------------------------- */
+  const titleStages = [
+    [0, 'SOMNA — 安睡如初'],
+    [0.3, 'SOMNA — 再待一会儿'],
+    [0.52, 'SOMNA — 别移开视线'],
+    [0.74, 'SOMNA — 它在这里']
+  ];
+  const faviconNormal = favicon.getAttribute('href');
+  const faviconRed = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23030303'/%3E%3Cpath d='M7 32Q32 9 57 32Q32 55 7 32Z' fill='%23cfc6b4'/%3E%3Ccircle cx='32' cy='32' r='10' fill='%238e1f14'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23000'/%3E%3C/svg%3E";
+  function setTitle() {
+    let idx = 0;
+    titleStages.forEach((s, i) => { if (state.mad >= s[0]) idx = i; });
+    if (idx !== state.lastTitle) {
+      state.lastTitle = idx;
+      document.title = titleStages[idx][1];
+      favicon.setAttribute('href', idx >= 2 ? faviconRed : faviconNormal);
+    }
+  }
+
+  /* ----------------------------------------------------------------
+     PALETTE
+  ---------------------------------------------------------------- */
+  const light = { paper: [245, 240, 231], ink: [26, 22, 17], muted: [111, 103, 92], surface: [251, 247, 239], line: [26, 22, 17], la: 0.14 };
+  const darkP = { paper: [231, 220, 202], ink: [30, 23, 18], muted: [93, 80, 65], surface: [241, 232, 216], line: [80, 55, 40], la: 0.17 };
+  function mixC(a, b, t) {
+    return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))];
+  }
+  function applyPalette(mad) {
+    const dark = smooth(clamp((mad - 0.28) / 0.62));
+    const paper = mixC(light.paper, darkP.paper, dark);
+    if (Math.abs(dark - state.lastDark) >= 0.004) {
+      state.lastDark = dark;
+      const ink = mixC(light.ink, darkP.ink, dark);
+      const muted = mixC(light.muted, darkP.muted, dark);
+      const surface = mixC(light.surface, darkP.surface, dark);
+      const line = mixC(light.line, darkP.line, dark);
+      const la = lerp(light.la, darkP.la, dark);
+      root.style.setProperty('--paper', `rgb(${paper.join(',')})`);
+      root.style.setProperty('--ink', `rgb(${ink.join(',')})`);
+      root.style.setProperty('--muted', `rgb(${muted.join(',')})`);
+      root.style.setProperty('--surface', `rgb(${surface.join(',')})`);
+      root.style.setProperty('--line', `rgba(${line.join(',')},${la})`);
+      root.style.setProperty('--wash', `rgba(${Math.round(lerp(221, 160, dark))},${Math.round(lerp(230, 142, dark))},${Math.round(lerp(220, 118, dark))},${(0.34 - dark * 0.1).toFixed(3)})`);
+    }
+    if (nav.classList.contains('scrolled')) {
+      const navBg = `rgba(${paper.join(',')},0.74)`;
+      if (navBg !== state.navBg) {
+        state.navBg = navBg;
+        nav.style.backgroundColor = navBg;
+      }
+    } else if (state.navBg) {
+      state.navBg = '';
+      nav.style.backgroundColor = '';
+    }
+    return dark;
+  }
+
+  /* ----------------------------------------------------------------
+     HUD / BRAND / HERO CARD
+  ---------------------------------------------------------------- */
+  const brandStages = [[0, 'SOMNA'], [0.38, 'SOMИA'], [0.5, 'SOMNA'], [0.62, 'SOMA'], [0.74, 'SOM'], [0.84, 'SO']];
+  function updateHud() {
+    const n = 2400000 - Math.floor(smooth(state.mad) * 46000);
+    if (n !== state.lastStat) {
+      state.lastStat = n;
+      if (statSleepers) statSleepers.textContent = n.toLocaleString('zh-CN');
+    }
+    let label = null;
+    if (state.mad < 0.42) label = `${n.toLocaleString('zh-CN')} 人入睡`;
+    else if (state.mad < 0.55) label = '1 人醒着';
+    else if (state.mad < 0.68) label = '你';
+    else label = '';
+    if (label !== state.lastHud) {
+      state.lastHud = label;
+      hudText.textContent = label;
+      hud.classList.toggle('one', state.mad >= 0.42);
+      if (label === '') hud.classList.add('hidden');
+    }
+    hud.classList.toggle('hidden', label === '' || state.f > 0.01);
+  }
+  function updateBrand() {
+    let idx = 0;
+    brandStages.forEach((s, i) => { if (state.mad >= s[0]) idx = i; });
+    if (idx !== state.lastBrand) {
+      state.lastBrand = idx;
+      brandWord.textContent = brandStages[idx][1];
+    }
+    if (state.mad >= 0.48 && navCta.textContent !== '今晚留下') {
+      navCta.textContent = '今晚留下';
+      navCta.style.background = '#5b1c12';
+    }
+  }
+  function updateHeroCard() {
+    const m = state.mad;
+    rcPupil.style.opacity = String(clamp((m - 0.18) / 0.32) * 0.88);
+    wave.classList.toggle('frantic', m > 0.4);
+    const mins = Math.max(0, 24 * 60 - Math.floor(smooth(m) * 24 * 60));
+    rcTimer.textContent = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+    rcState.textContent = m < 0.26 ? '正在放松' : m < 0.44 ? '不要抵抗这份重量' : m < 0.62 ? '快到了' : '它正在起效';
+    nightNo.textContent = String(41 + Math.floor(smooth(m) * 158)).padStart(3, '0');
+    if (chipNum) chipNum.textContent = m > 0.5 ? '1' : '240万';
+  }
+
+  /* ----------------------------------------------------------------
+     SCROLL STATE
+  ---------------------------------------------------------------- */
+  function finaleProgress() {
+    const total = Math.max(1, finale.offsetHeight - window.innerHeight);
+    const top = finale.getBoundingClientRect().top;
+    return clamp(-top / total);
+  }
+  function descentProgress() {
+    const total = Math.max(1, descent.offsetHeight - window.innerHeight);
+    const top = descent.getBoundingClientRect().top;
+    return clamp(-top / total);
+  }
+  function frame() {
+    const vh = window.innerHeight;
+    const y = window.scrollY;
+    const finalTopDoc = y + finale.getBoundingClientRect().top;
+    const chaosStart = vh * 0.22;
+    const chaosEnd = Math.max(chaosStart + 1, finalTopDoc - vh * 0.85);
+    const targetMad = smooth(clamp((y - chaosStart) / (chaosEnd - chaosStart)));
+    state.mad += (targetMad - state.mad) * 0.11;
+    state.f = finaleProgress();
+    state.d = descentProgress();
+    const fVis = clamp((vh * 0.92 - finale.getBoundingClientRect().top) / (vh * 0.7));
+
+    const dark = applyPalette(state.mad);
+    setTitle();
+    updateHud();
+    updateBrand();
+    updateHeroCard();
+    checkSwaps();
+
+    /* nav */
+    const scrolled = y > 12;
+    if (scrolled !== state.scrolled) {
+      state.scrolled = scrolled;
+      nav.classList.toggle('scrolled', scrolled);
+      applyPalette(state.mad);
+    }
+    const descentTopNow = descent.getBoundingClientRect().top;
+    const endlineTopNow = endlineEl.getBoundingClientRect().top;
+    const navGone = endlineTopNow < vh * 0.38 || descentTopNow < vh * 0.9;
+    if (navGone !== state.navHidden) {
+      state.navHidden = navGone;
+      nav.classList.toggle('hidden', navGone);
+      hud.classList.toggle('hidden', navGone || state.lastHud === '');
+      soundBtn.classList.toggle('hidden', navGone);
+      soundHint.classList.toggle('hidden', navGone);
+    }
+    const darkNear = clamp(descentTopNow / (vh * 0.9));
+
+    /* atmosphere */
+    grain.style.opacity = String(0.03 + state.mad * 0.12 + state.f * 0.06);
+    vignette.style.opacity = String(clamp(state.mad * 0.72 + state.d * 0.1) * (1 - fVis * 0.75));
+    dread.style.opacity = String(clamp(state.mad * 0.6) * (1 - fVis));
+    scan.style.opacity = String(clamp((state.mad - 0.38) / 0.5) * 0.2 * (1 - fVis));
+    whispersWrap.style.opacity = String(clamp((state.mad - 0.18) / 0.35) * 0.5 * (1 - fVis) * darkNear);
+    watchersWrap.style.opacity = String((1 - fVis) * darkNear);
+
+    const now = performance.now();
+    watchers.forEach(w => {
+      const target = clamp((state.mad - w.cfg.at) / 0.12) * 0.4;
+      w.shown += (target - w.shown) * 0.12;
+      w.el.style.opacity = String(w.shown);
+      if (w.pupil) {
+        const dx = state.mx * 5.5, dy = state.my * 4;
+        w.pupil.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)})`);
+      }
+    });
+
+    /* ghost in the third feature card */
+    ghost.style.setProperty('--wake', String(clamp((state.mad - 0.28) / 0.5)));
+
+    /* scroll hint */
+    let hint = null;
+    const descentTop = descent.getBoundingClientRect().top;
+    if (descentTop > vh * 0.9 && y < vh * 0.5) hint = '向下滚，去休息';
+    else if (descentTop > vh * 0.9 && y < vh * 1.9) hint = '继续向下';
+    else if (descentTop > vh * 0.9) hint = state.mad > 0.55 ? '别停下' : '下面还有';
+    if (hint !== state.lastHint) {
+      state.lastHint = hint;
+      if (hint) {
+        hintText.textContent = hint;
+        scrollHint.classList.remove('hidden');
+      } else {
+        scrollHint.classList.add('hidden');
+      }
+    }
+
+    /* stats label */
+    let labelIdx = state.mad < 0.44 ? 0 : state.mad < 0.66 ? 1 : 2;
+    if (labelIdx !== state.lastLabel) {
+      state.lastLabel = labelIdx;
+      statSleepersLabel.textContent = ['人与 Somna 一同入睡', '人仍在我们清点之中', '还在减少'][labelIdx];
+    }
+
+    /* descent */
+    const dl = dlines;
+    dl.forEach((el, i) => {
+      const start = 0.035 + i * 0.215;
+      const inn = smooth(clamp((state.d - start) / 0.09));
+      const isLast = i === dl.length - 1;
+      const out = isLast ? 0 : smooth(clamp((state.d - (start + 0.13)) / 0.09));
+      const op = clamp(inn * (1 - out));
+      el.style.opacity = String(op);
+      el.style.transform = `translateY(${(1 - inn) * 18}px)`;
+    });
+    descentEye.style.setProperty('--dopen', String(0.04 + smooth(clamp(state.d / 0.55)) * 0.96));
+    descentEye.style.opacity = String(0.05 + clamp(state.d / 0.5) * 0.14);
+
+    /* finale */
+    const f = state.f;
+    const faceScale = 0.6 + smooth(f) * 0.46;
+    const breathe = Math.sin(performance.now() * 0.0012) * (0.004 + f * 0.005);
+    const shakeAmp = reduced ? 0 : Math.max(0, f - 0.76) * 18;
+    const shx = shakeAmp ? rand(-shakeAmp, shakeAmp) : 0;
+    const shy = shakeAmp ? rand(-shakeAmp, shakeAmp) : 0;
+    faceWrap.style.transform = `translate(-50%,-50%) translate(${shx.toFixed(1)}px,${(shy + (1 - smooth(f)) * 46 - f * 3).toFixed(1)}px) scale(${(faceScale + breathe).toFixed(4)}) rotate(${(state.mx * 0.55 + Math.sin(f * 6) * 0.35).toFixed(2)}deg)`;
+    faceWrap.style.opacity = String(clamp(0.02 + smooth(clamp(f / 0.2)) * 0.98));
+
+    const open = smooth(clamp((f - 0.48) / 0.34));
+    const mouth = faceWrap.querySelector('.mouth-open');
+    if (mouth) mouth.setAttribute('transform', `translate(500 920) scale(${(0.55 + open * 0.47).toFixed(3)} ${(0.02 + open * 1.03).toFixed(3)})`);
+    const mouthLine = faceWrap.querySelector('.mouth-line');
+    if (mouthLine) mouthLine.style.opacity = String(0.72 * (1 - clamp(open * 3.4)));
+    const eyeOp = smooth(clamp((f - 0.26) / 0.32));
+    faceWrap.querySelectorAll('.eye-gleam').forEach(el => { el.style.opacity = String(eyeOp); });
+    faceWrap.querySelectorAll('.teeth').forEach(el => { el.style.opacity = String(clamp((open - 0.5) / 0.3) * 0.28); });
+    const tearOp = smooth(clamp((f - 0.52) / 0.28));
+    faceWrap.querySelectorAll('.tears').forEach(el => { el.style.opacity = String(tearOp * 0.62); });
+    faceWrap.querySelectorAll('.stretch').forEach(el => { el.style.opacity = String(open * 0.5); });
+
+    redwash.style.opacity = String(clamp((f - 0.46) / 0.32) * 0.62);
+    if (f > 0.6) {
+      flicker.style.opacity = String((Math.random() < 0.16 ? rand(0.08, 0.35) : 0) * clamp((f - 0.6) / 0.2));
+    } else flicker.style.opacity = '0';
+
+    const win = (x, a, b, fi, fo) => clamp((x - a) / fi) * clamp((b - x) / fo);
+    const o1 = win(f, 0.005, 0.165, 0.025, 0.04);
+    const o2 = win(f, 0.08, 0.46, 0.05, 0.06);
+    fseq1.style.opacity = String(o1);
+    fseq1.style.transform = `translateY(${(1 - o1) * 8}px)`;
+    fseq2.style.opacity = String(o2);
+    fseq2.style.transform = `scale(${0.95 + f * 0.08})`;
+    finalePct.textContent = String(Math.round(f * 100)).padStart(2, '0');
+
+    if (f > 0.955 && !state.scared) triggerScare();
+
+    /* audio */
+    if (audio.on && audio.ctx) {
+      const t = audio.ctx.currentTime;
+      audio.droneGain.gain.setTargetAtTime(0.055 + state.mad * 0.06 + state.f * 0.05, t, 0.5);
+      audio.droneFilter.frequency.setTargetAtTime(210 + state.mad * 420 + state.f * 500, t, 0.6);
+      audio.noiseGain.gain.setTargetAtTime(0.012 + state.mad * 0.028 + state.f * 0.03, t, 0.6);
+      audio.tensionGain.gain.setTargetAtTime(state.f > 0.35 ? (state.f - 0.35) * 0.075 : 0, t, 0.4);
+      audio.tensionOsc.frequency.setTargetAtTime(180 + state.f * 420, t, 0.5);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  /* pointer + resize */
+  window.addEventListener('pointermove', e => {
+    state.mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    state.my = (e.clientY / window.innerHeight - 0.5) * 2;
+  }, { passive: true });
+  window.addEventListener('pointerleave', () => { state.mx = 0; state.my = 0; }, { passive: true });
+
+  /* occasional visible glitch */
+  window.setInterval(() => {
+    if (reduced || document.hidden) return;
+    if (state.mad < 0.3 || state.f > 0.05) return;
+    const vh = window.innerHeight;
+    const cands = $$('.display, .intro-lede, .quote blockquote, .lede, .plan .price').filter(el => {
+      const r = el.getBoundingClientRect();
+      return !el.classList.contains('is-swapping') && r.top > vh * 0.12 && r.bottom < vh * 0.9;
+    });
+    if (!cands.length) return;
+    const el = cands[Math.floor(Math.random() * cands.length)];
+    el.classList.add('is-glitching');
+    window.setTimeout(() => el.classList.remove('is-glitching'), 520);
+  }, 3400);
+
+  leaveBtn.addEventListener('click', () => {
+    const flash = document.createElement('div');
+    flash.className = 'whiteout';
+    document.body.appendChild(flash);
+    try { sessionStorage.setItem('somna-reset', '1'); } catch (e) {}
+    window.setTimeout(() => { location.href = location.pathname + '?reset=1'; }, 560);
+  });
+  if (/reset=1/.test(location.search)) {
+    try { sessionStorage.removeItem('somna-reset'); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+
+  /* expose a tiny dev hook for captures */
+  window.__SOMNA = { state };
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
