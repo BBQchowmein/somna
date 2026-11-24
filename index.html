@@ -123,6 +123,28 @@ button{font-family:inherit}
 }
 #soundHint.show{opacity:.55}
 #soundHint.hidden{opacity:0}
+.hidden-eye{
+  position:relative;display:grid;place-items:center;flex:0 0 auto;
+  width:17px;height:17px;margin-left:-7px;padding:0;border:0;background:none;
+  color:var(--muted);opacity:.3;cursor:pointer;
+  transition:opacity .3s,color .3s,transform .3s;
+}
+.hidden-eye:before{content:"";position:absolute;inset:-9px}
+.hidden-eye svg{width:15px;height:15px;display:block}
+.hidden-eye:hover,.hidden-eye:focus-visible{opacity:.9;color:var(--ink);transform:scale(1.12)}
+.hidden-eye:focus-visible{outline:1px dotted var(--muted);outline-offset:3px}
+.hidden-eye.found{opacity:.9;color:#a67c3f;filter:drop-shadow(0 0 5px rgba(166,124,63,.55))}
+.hidden-eye.wrong{animation:eyeWrong .35s ease}
+@keyframes eyeWrong{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+#eyeToast{
+  position:fixed;left:50%;bottom:72px;z-index:130;pointer-events:none;
+  transform:translateX(-50%) translateY(8px);
+  padding:9px 16px;border:1px solid var(--line);border-radius:99px;
+  background:rgba(245,240,231,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  color:var(--ink);font-size:11px;letter-spacing:.08em;white-space:nowrap;
+  opacity:0;transition:opacity .55s ease,transform .55s ease;
+}
+#eyeToast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* NAV --------------------------------------------------------------- */
 .nav{
@@ -421,6 +443,28 @@ h2.display em{font-style:normal;color:var(--green)}
 .stories-foot .stars{letter-spacing:.2em;color:var(--green);font-size:11px}
 .stories-foot .tiny{opacity:.55;letter-spacing:.04em;text-transform:none;font-style:normal;font-family:var(--sans);font-size:12px}
 
+/* FAQ ---------------------------------------------------------------- */
+.faq{padding:160px 0 150px}
+.faq-list{max-width:900px;margin-left:276px;border-top:1px solid var(--line)}
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-item summary{
+  list-style:none;cursor:pointer;position:relative;
+  padding:24px 44px 24px 0;
+  font-family:var(--serif);font-size:22px;letter-spacing:-.01em;color:var(--ink);
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::marker{content:""}
+.faq-item summary:after{
+  content:"+";position:absolute;right:2px;top:50%;transform:translateY(-50%);
+  font-family:var(--sans);font-weight:300;font-size:22px;color:var(--muted);
+  transition:transform .35s var(--ease),color .35s;
+}
+.faq-item[open] summary:after{transform:translateY(-50%) rotate(45deg);color:var(--ink)}
+.faq-a{padding:0 56px 28px 0;max-width:62ch;font-size:13.5px;line-height:1.95;color:var(--muted)}
+.founder-note{max-width:840px;margin:70px 0 0 276px;padding-top:34px;border-top:1px solid var(--line)}
+.founder-note p{margin:0;font-family:var(--serif);font-size:clamp(24px,2.6vw,34px);line-height:1.55;letter-spacing:-.01em}
+.founder-note footer{margin-top:20px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);opacity:.75}
+
 /* ACCESS ------------------------------------------------------------- */
 .access{padding:150px 0 170px}
 .plans{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin-left:276px}
@@ -516,6 +560,9 @@ h2.display em{font-style:normal;color:var(--green)}
   position:sticky;top:0;height:100svh;overflow:hidden;isolation:isolate;
   background:
     radial-gradient(ellipse at 50% 58%, #100d0a 0%, #070505 52%, #010101 100%);
+}
+.finale-stage.redeemed{
+  background:radial-gradient(ellipse at 50% 82%, #2a1b10 0%, #0a0705 55%, #020202 100%);
 }
 .face-wrap{
   position:absolute;left:50%;top:50%;height:128svh;aspect-ratio:1000/1400;
@@ -642,7 +689,43 @@ h2.display em{font-style:normal;color:var(--green)}
   position:relative;min-height:100svh;background:#020202;color:#e7e0d1;
   display:grid;place-items:center;text-align:center;padding:12vh 6vw;overflow:hidden;
 }
-.epi-inner{position:relative;z-index:2}
+.epilogue.good{
+  background:radial-gradient(ellipse at 50% 40%, #fffbf1 0%, #f4ead9 45%, #d8c7ad 100%);
+  color:#1a1611;
+}
+.epilogue.good .epi-glow{background:radial-gradient(circle,rgba(255,211,136,.45),transparent 65%)}
+.epilogue.good .epi-mark{color:rgba(26,22,17,.35)}
+.epilogue.good h2{color:#1a1611}
+.epilogue.good .epi-inner>p:not(.epi-mark){color:rgba(26,22,17,.5)}
+.epilogue.good .epi-actions .sleep{display:none}
+.epilogue.good .epi-eye{display:none}
+.epilogue.good .epi-sleep{display:none}
+.epilogue.good .leave{border-color:rgba(26,22,17,.28);color:#1a1611}
+.epilogue.good .leave:hover{background:#1a1611;color:#f5f0e7}
+.epi-inner{position:relative;z-index:2;transition:opacity 1.6s ease,transform 1.6s ease}
+.epi-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.epi-actions .leave{margin:0}
+.leave.sleep{background:#e7e0d1;color:#050505;border-color:#e7e0d1}
+.leave.sleep:hover{background:transparent;color:#e7e0d1}
+.epilogue.sleeping .epi-inner{opacity:0;transform:translateY(-8px);pointer-events:none}
+.epilogue.sleeping .epi-eye{animation:none;transform:scaleY(.02);opacity:.08;transition:transform 1.4s ease,opacity 1.4s ease}
+.epi-sleep{
+  position:absolute;inset:0;z-index:3;display:grid;place-items:center;
+  text-align:center;padding:10vh 6vw;opacity:0;pointer-events:none;
+  transition:opacity 2.2s ease .6s;
+}
+.epilogue.sleeping .epi-sleep{opacity:1;pointer-events:auto}
+.epi-sleep .epi-mark{margin-bottom:30px}
+.epi-sleep .sleep-line{
+  margin:0 0 18px;font-family:var(--serif);font-size:clamp(20px,2.4vw,30px);
+  line-height:1.5;color:rgba(231,224,209,.55);
+}
+.epi-sleep .sleep-line.after{
+  margin:24px 0 0;font-size:clamp(13px,1.4vw,16px);letter-spacing:.08em;
+  color:rgba(231,224,209,.35);font-family:var(--sans);
+}
+.epi-sleep .wake{margin-top:36px;background:transparent;color:#e7e0d1}
+.epi-sleep .wake:hover{background:#e7e0d1;color:#050505}
 .epi-mark{font-family:var(--serif);font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:rgba(231,224,209,.35);margin:0 0 34px}
 .epilogue h2{
   margin:0;font-family:var(--serif);font-weight:400;
@@ -718,7 +801,11 @@ h2.display em{font-style:normal;color:var(--green)}
   .quote-grid{grid-template-columns:1fr}
   .quote{min-height:0}
   .plans{margin-left:0;grid-template-columns:1fr;max-width:none}
-  .method,.stories,.access{padding:100px 0}
+  .method,.stories,.faq,.access{padding:100px 0}
+  .faq-list,.founder-note{margin-left:0}
+  .faq-item summary{font-size:19px;padding-right:36px}
+  .faq-a{padding-right:0;font-size:13px}
+  .founder-note p{font-size:clamp(23px,6.2vw,30px)}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
   .f-brand{grid-column:1/-1}
   .endline{padding:80px 0 70px}
@@ -736,6 +823,10 @@ h2.display em{font-style:normal;color:var(--green)}
   .fseq.one{display:none}
   .scare-image img{height:88svh}
   #soundHint{display:none}
+  .hidden-eye{width:20px;height:20px;margin-left:-6px}
+  .hidden-eye:before{inset:-10px}
+  .hidden-eye svg{width:17px;height:17px}
+  #eyeToast{bottom:64px;font-size:10px;max-width:86vw;white-space:normal;line-height:1.5;text-align:center}
   .finale-hud{font-size:7px;gap:12px}
   .watcher{display:none}
   .watcher:first-child{display:block}
@@ -758,6 +849,7 @@ h2.display em{font-style:normal;color:var(--green)}
 
 <div id="hud"><span class="dot"></span><span id="hudText">2,400,000 人入睡</span></div>
 <div id="soundHint" aria-hidden="true">建议佩戴耳机</div>
+<div id="eyeToast" role="status" aria-live="polite"></div>
 <button id="sound" type="button" aria-pressed="false" aria-label="开关环境声音">
   <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
   <span id="soundLabel">声音 关</span>
@@ -775,6 +867,7 @@ h2.display em{font-style:normal;color:var(--green)}
     <a href="#quiet">静境</a>
     <a href="#method">方法</a>
     <a href="#stories">故事</a>
+    <a href="#faq">问答</a>
     <a href="#access">方案</a>
   </nav>
   <a href="#access" class="nav-cta" id="navCta">今晚开始</a>
@@ -822,7 +915,7 @@ h2.display em{font-style:normal;color:var(--green)}
 
   <section class="intro wrap" id="quiet">
     <div class="section-head">
-      <p class="kicker"><span class="idx">01</span> 静境</p>
+      <p class="kicker"><span class="idx">01</span> 静境 <button class="hidden-eye" type="button" data-eye="1" aria-label="隐藏的眼睛，第 1 只，共 5 只"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12Q12 3.5 21.5 12Q12 20.5 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button></p>
       <h2 class="display" data-swap data-text="你不是生来就该这么累。">你不是生来就累。</h2>
     </div>
     <div class="intro-body">
@@ -848,7 +941,7 @@ h2.display em{font-style:normal;color:var(--green)}
   <section class="method" id="method">
     <div class="wrap">
       <div class="section-head">
-        <p class="kicker"><span class="idx">02</span> 方法</p>
+        <p class="kicker"><span class="idx">02</span> 方法 <button class="hidden-eye" type="button" data-eye="2" aria-label="隐藏的眼睛，第 2 只，共 5 只"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12Q12 3.5 21.5 12Q12 20.5 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button></p>
         <h2 class="display" data-swap data-text="三件小事。<br>它们把你留在这里。">三件小事。<br>一个深夜。</h2>
       </div>
       <div class="feature-grid">
@@ -898,34 +991,73 @@ h2.display em{font-style:normal;color:var(--green)}
   <section class="stories" id="stories">
     <div class="wrap">
       <div class="section-head">
-        <p class="kicker"><span class="idx">03</span> 故事</p>
+        <p class="kicker"><span class="idx">03</span> 故事 <button class="hidden-eye" type="button" data-eye="3" aria-label="隐藏的眼睛，第 3 只，共 5 只"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12Q12 3.5 21.5 12Q12 20.5 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button></p>
         <h2 class="display" data-swap data-text="人们还在睡觉。<br>仅此而已。">人们又在睡觉了。</h2>
       </div>
       <div class="quote-grid">
         <figure class="quote">
-          <div class="qmark" aria-hidden="true">“/div>
+          <div class="qmark" aria-hidden="true">“</div>
           <blockquote data-swap="quote" data-text="头还没碰到枕头我就睡着了。我不记得枕头。">头还没碰到枕头我就睡着了。我已经忘了那是什么感觉。</blockquote>
           <figcaption><span class="avatar a1">玛</span><span><b>玛拉 · K.</b><small>2023 年加入</small></span></figcaption>
         </figure>
         <figure class="quote">
-          <div class="qmark" aria-hidden="true">“/div>
+          <div class="qmark" aria-hidden="true">“</div>
           <blockquote data-swap="quote" data-text="凌晨三点的寂静以前让我害怕。现在它会叫我的名字。">凌晨三点的寂静以前让我害怕。现在它……被占满了。</blockquote>
           <figcaption><span class="avatar a2">乔</span><span><b>乔纳斯 · R.</b><small>2024 年加入</small></span></figcaption>
         </figure>
         <figure class="quote">
-          <div class="qmark" aria-hidden="true">“/div>
+          <div class="qmark" aria-hidden="true">“</div>
           <blockquote data-swap="quote" data-text="我不再做梦了。我只是去某个地方。那里很安静。">我不再做梦了。我只是去某个地方。</blockquote>
           <figcaption><span class="avatar a3">普</span><span><b>普里娅 · S.</b><small>2022 年加入</small></span></figcaption>
         </figure>
       </div>
-      <div class="stories-foot"><span class="stars">★★★★★/span> 4.9 / 5 &nbsp;·&nbsp; 18,204 条评价 <span class="tiny">—— 每一条我们都读过。</span></div>
+      <div class="stories-foot"><span class="stars">★★★★★</span> 4.9 / 5 &nbsp;·&nbsp; 18,204 条评价 <span class="tiny">—— 每一条我们都读过。</span></div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker"><span class="idx">04</span> 问答 <button class="hidden-eye" type="button" data-eye="4" aria-label="隐藏的眼睛，第 4 只，共 5 只"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12Q12 3.5 21.5 12Q12 20.5 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button></p>
+        <h2 class="display" data-swap data-text="它们也在等你。">还有几个问题。</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>它会上瘾吗？</summary>
+          <div class="faq-a">不会。它不靠药物，也不靠习惯。你只需要每晚回来。</div>
+        </details>
+        <details class="faq-item">
+          <summary>半夜醒来怎么办？</summary>
+          <div class="faq-a">什么也不用做。它会等。</div>
+        </details>
+        <details class="faq-item">
+          <summary>可以随时取消吗？</summary>
+          <div class="faq-a">可以。随时都可以。大多数人在第三个晚上就取消了。他们还在这里。</div>
+        </details>
+        <details class="faq-item">
+          <summary>你们会记录我的梦吗？</summary>
+          <div class="faq-a">不会。我们只记录你不在的那些夜晚。</div>
+        </details>
+        <details class="faq-item">
+          <summary>为什么我总觉得房间里还有别人？</summary>
+          <div class="faq-a">那只是页面加载得比较慢。</div>
+        </details>
+        <details class="faq-item">
+          <summary>这里还藏着别的东西吗？</summary>
+          <div class="faq-a">有。五只眼睛。每一章的开头都有一只。按 01 到 05 的顺序点开它们。别跳。</div>
+        </details>
+      </div>
+      <blockquote class="founder-note">
+        <p>“我做 Somna，是因为我厌倦了数羊。现在，我数人。每晚两百四十万。他们都在。”</p>
+        <footer>E. 维尔，创始人</footer>
+      </blockquote>
     </div>
   </section>
 
   <section class="access" id="access">
     <div class="wrap">
       <div class="section-head">
-        <p class="kicker"><span class="idx">04</span> 方案</p>
+        <p class="kicker"><span class="idx">05</span> 方案 <button class="hidden-eye" type="button" data-eye="5" aria-label="隐藏的眼睛，第 5 只，共 5 只"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12Q12 3.5 21.5 12Q12 20.5 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button></p>
         <h2 class="display" data-swap data-text="休息很简单。<br>它已经是你的了。">休息很简单。<br>这次也一样。</h2>
       </div>
       <div class="plans">
@@ -962,7 +1094,7 @@ h2.display em{font-style:normal;color:var(--green)}
         <span class="brand-word">SOMNA</span>
         <p>睡眠不是任务。<br>它是一个地方。</p>
       </div>
-      <div class="f-col"><h4>产品</h4><a href="#method">仪式</a><a href="#access">方案</a><a href="#">设备</a></div>
+      <div class="f-col"><h4>产品</h4><a href="#method">仪式</a><a href="#faq">问答</a><a href="#access">方案</a><a href="#">设备</a></div>
       <div class="f-col"><h4>公司</h4><a href="#">科学</a><a href="#">招聘</a><a href="#">媒体</a></div>
       <div class="f-col"><h4>联系</h4><a href="#">帮助</a><a href="#">隐私</a><a href="#">条款</a></div>
     </div>
@@ -1200,7 +1332,19 @@ h2.display em{font-style:normal;color:var(--green)}
     <p class="epi-mark">SOMNA</p>
     <h2>你还醒着。</h2>
     <p>暂时。</p>
-    <button class="leave" id="leaveBtn">离开</button>
+    <div class="epi-actions">
+      <button class="leave" id="leaveBtn">离开</button>
+      <button class="leave sleep" id="sleepBtn">睡吧</button>
+    </div>
+  </div>
+  <div class="epi-sleep" id="epiSleep" aria-hidden="true" inert>
+    <div>
+      <p class="epi-mark">SOMNA</p>
+      <p class="sleep-line">它替你关掉了灯。</p>
+      <h2>晚安。</h2>
+      <p class="sleep-line after">它会记得你选择了什么。</p>
+      <button class="leave wake" id="wakeBtn">醒来</button>
+    </div>
   </div>
 </section>
 
@@ -1251,6 +1395,11 @@ h2.display em{font-style:normal;color:var(--green)}
   const finalePct = $('#finalePct');
   const scare = $('#scare');
   const epilogue = $('#epilogue');
+  const epiInner = $('.epi-inner');
+  const epiTitle = $('.epi-inner h2');
+  const epiSub = $('.epi-inner h2 + p');
+  const eyeBtns = $$('.hidden-eye');
+  const eyeToast = $('#eyeToast');
   const scrollHint = $('#scrollHint');
   const hintText = $('#hintText');
   const statSleepers = $('#statSleepers');
@@ -1263,16 +1412,21 @@ h2.display em{font-style:normal;color:var(--green)}
   const nightNo = $('#nightNo');
   const chipNum = $('#chipNum');
   const leaveBtn = $('#leaveBtn');
+  const sleepBtn = $('#sleepBtn');
+  const wakeBtn = $('#wakeBtn');
+  const epiSleep = $('#epiSleep');
   const favicon = $('#favicon');
   const dlines = $$('[data-dline]');
   const endlineEl = $('.endline');
 
   const state = {
-    mad: 0, f: 0, d: 0, scared: false,
+    mad: 0, f: 0, d: 0, scared: false, good: false,
     lastDark: -1, lastTitle: -1, lastBrand: -1, lastHud: '',
     lastStat: -1, lastLabel: -1, navHidden: null, scrolled: null,
     mx: 0, my: 0, lastScareCheck: 0, navBg: ''
   };
+  let eyeStep = 0;
+  let toastTimer = 0;
 
   /* ----------------------------------------------------------------
      ATMOSPHERE
@@ -1306,7 +1460,8 @@ h2.display em{font-style:normal;color:var(--green)}
   const whisperPhrases = [
     '再待一会儿', '这页上不止你一个', '它站在光原来在的地方',
     '别回头看', '我们数过你', '房间变小了', '你早该停下',
-    '它知道你正在读', '七分钟就够了', '枕头记得你的重量'
+    '它知道你正在读', '七分钟就够了', '枕头记得你的重量',
+    '你已经待了太久', '把灯关掉'
   ];
   const whisperZones = [[3, 18], [97, 18], [3, 58], [97, 58], [3, 84], [97, 84], [3, 34], [97, 34]];
   const whisperEls = [];
@@ -1525,6 +1680,7 @@ h2.display em{font-style:normal;color:var(--green)}
   function triggerScare() {
     if (state.scared) return;
     state.scared = true;
+    if (state.good) return;
     if (reduced) return;
     scare.classList.remove('on');
     void scare.offsetWidth;
@@ -1532,6 +1688,58 @@ h2.display em{font-style:normal;color:var(--green)}
     scareSound();
     window.setTimeout(() => scare.classList.remove('on'), 2750);
   }
+
+  /* ----------------------------------------------------------------
+     HIDDEN EYES
+  ---------------------------------------------------------------- */
+  function showToast(message, ms = 2600) {
+    eyeToast.textContent = message;
+    eyeToast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => eyeToast.classList.remove('show'), ms);
+  }
+  function applyGood(silent) {
+    if (state.good) return;
+    state.good = true;
+    eyeStep = 5;
+    document.documentElement.classList.add('good-unlocked');
+    epilogue.classList.add('good');
+    epilogue.classList.remove('sleeping');
+    epiSleep.setAttribute('aria-hidden', 'true');
+    epiSleep.setAttribute('inert', '');
+    epiInner.removeAttribute('inert');
+    fseq2.innerHTML = '可以<br>睁眼';
+    fseq1.textContent = 'SOMNA 把灯打开了';
+    epiTitle.textContent = '你醒了。';
+    epiSub.textContent = '这次是真的。天亮了。';
+    finaleStage.classList.add('redeemed');
+    redwash.style.background = 'radial-gradient(ellipse at 50% 80%, rgba(214,165,92,.42), transparent 64%)';
+    eyeBtns.forEach(btn => btn.classList.add('found'));
+    try { sessionStorage.setItem('somna-good', '1'); } catch (e) {}
+    if (!silent) showToast('五只眼睛都睁开了。天要亮了。', 5000);
+  }
+  eyeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (state.good) return;
+      const n = Number(btn.dataset.eye);
+      if (btn.classList.contains('found')) return;
+      if (n === eyeStep + 1) {
+        btn.classList.add('found');
+        eyeStep = n;
+        if (n === 5) {
+          applyGood(false);
+        } else {
+          showToast(`第${['一', '二', '三', '四'][n - 1]}只睁开了。`, 2200);
+        }
+      } else {
+        eyeBtns.forEach(b => b.classList.remove('found'));
+        eyeStep = 0;
+        btn.classList.add('wrong');
+        window.setTimeout(() => btn.classList.remove('wrong'), 400);
+        showToast('顺序不对。从第一只重新开始。', 3000);
+      }
+    });
+  });
 
   /* ----------------------------------------------------------------
      SWAPS
@@ -1703,6 +1911,7 @@ h2.display em{font-style:normal;color:var(--green)}
       applyPalette(state.mad);
     }
     const descentTopNow = descent.getBoundingClientRect().top;
+    if (descentTopNow < vh * 0.55) eyeToast.classList.remove('show');
     const endlineTopNow = endlineEl.getBoundingClientRect().top;
     const navGone = endlineTopNow < vh * 0.38 || descentTopNow < vh * 0.9;
     if (navGone !== state.navHidden) {
@@ -1775,28 +1984,33 @@ h2.display em{font-style:normal;color:var(--green)}
 
     /* finale */
     const f = state.f;
-    const faceScale = 0.6 + smooth(f) * 0.46;
+    const good = state.good;
+    const faceScale = good ? 0.6 + smooth(f) * 0.22 : 0.6 + smooth(f) * 0.46;
     const breathe = Math.sin(performance.now() * 0.0012) * (0.004 + f * 0.005);
-    const shakeAmp = reduced ? 0 : Math.max(0, f - 0.76) * 18;
+    const shakeAmp = good || reduced ? 0 : Math.max(0, f - 0.76) * 18;
     const shx = shakeAmp ? rand(-shakeAmp, shakeAmp) : 0;
     const shy = shakeAmp ? rand(-shakeAmp, shakeAmp) : 0;
     faceWrap.style.transform = `translate(-50%,-50%) translate(${shx.toFixed(1)}px,${(shy + (1 - smooth(f)) * 46 - f * 3).toFixed(1)}px) scale(${(faceScale + breathe).toFixed(4)}) rotate(${(state.mx * 0.55 + Math.sin(f * 6) * 0.35).toFixed(2)}deg)`;
-    faceWrap.style.opacity = String(clamp(0.02 + smooth(clamp(f / 0.2)) * 0.98));
+    faceWrap.style.opacity = good
+      ? String(clamp(0.84 - f * 0.92))
+      : String(clamp(0.02 + smooth(clamp(f / 0.2)) * 0.98));
 
-    const open = smooth(clamp((f - 0.48) / 0.34));
+    const open = good ? 0 : smooth(clamp((f - 0.48) / 0.34));
     const mouth = faceWrap.querySelector('.mouth-open');
     if (mouth) mouth.setAttribute('transform', `translate(500 920) scale(${(0.55 + open * 0.47).toFixed(3)} ${(0.02 + open * 1.03).toFixed(3)})`);
     const mouthLine = faceWrap.querySelector('.mouth-line');
     if (mouthLine) mouthLine.style.opacity = String(0.72 * (1 - clamp(open * 3.4)));
-    const eyeOp = smooth(clamp((f - 0.26) / 0.32));
+    const eyeOp = good ? 0 : smooth(clamp((f - 0.26) / 0.32));
     faceWrap.querySelectorAll('.eye-gleam').forEach(el => { el.style.opacity = String(eyeOp); });
     faceWrap.querySelectorAll('.teeth').forEach(el => { el.style.opacity = String(clamp((open - 0.5) / 0.3) * 0.28); });
-    const tearOp = smooth(clamp((f - 0.52) / 0.28));
+    const tearOp = good ? 0 : smooth(clamp((f - 0.52) / 0.28));
     faceWrap.querySelectorAll('.tears').forEach(el => { el.style.opacity = String(tearOp * 0.62); });
     faceWrap.querySelectorAll('.stretch').forEach(el => { el.style.opacity = String(open * 0.5); });
 
-    redwash.style.opacity = String(clamp((f - 0.46) / 0.32) * 0.62);
-    if (f > 0.6) {
+    redwash.style.opacity = good
+      ? String(clamp((f - 0.42) / 0.35) * 0.42)
+      : String(clamp((f - 0.46) / 0.32) * 0.62);
+    if (!good && f > 0.6) {
       flicker.style.opacity = String((Math.random() < 0.16 ? rand(0.08, 0.35) : 0) * clamp((f - 0.6) / 0.2));
     } else flicker.style.opacity = '0';
 
@@ -1817,7 +2031,7 @@ h2.display em{font-style:normal;color:var(--green)}
       audio.droneGain.gain.setTargetAtTime(0.055 + state.mad * 0.06 + state.f * 0.05, t, 0.5);
       audio.droneFilter.frequency.setTargetAtTime(210 + state.mad * 420 + state.f * 500, t, 0.6);
       audio.noiseGain.gain.setTargetAtTime(0.012 + state.mad * 0.028 + state.f * 0.03, t, 0.6);
-      audio.tensionGain.gain.setTargetAtTime(state.f > 0.35 ? (state.f - 0.35) * 0.075 : 0, t, 0.4);
+      audio.tensionGain.gain.setTargetAtTime(good ? 0 : (state.f > 0.35 ? (state.f - 0.35) * 0.075 : 0), t, 0.4);
       audio.tensionOsc.frequency.setTargetAtTime(180 + state.f * 420, t, 0.5);
     }
 
@@ -1846,17 +2060,35 @@ h2.display em{font-style:normal;color:var(--green)}
     window.setTimeout(() => el.classList.remove('is-glitching'), 520);
   }, 3400);
 
-  leaveBtn.addEventListener('click', () => {
+  function resetPage() {
     const flash = document.createElement('div');
     flash.className = 'whiteout';
     document.body.appendChild(flash);
-    try { sessionStorage.setItem('somna-reset', '1'); } catch (e) {}
+    try {
+      sessionStorage.setItem('somna-reset', '1');
+      sessionStorage.removeItem('somna-good');
+    } catch (e) {}
     window.setTimeout(() => { location.href = location.pathname + '?reset=1'; }, 560);
+  }
+  leaveBtn.addEventListener('click', resetPage);
+  wakeBtn.addEventListener('click', resetPage);
+  sleepBtn.addEventListener('click', () => {
+    epilogue.classList.add('sleeping');
+    epiSleep.setAttribute('aria-hidden', 'false');
+    epiSleep.removeAttribute('inert');
+    epiInner.setAttribute('inert', '');
+    sleepBtn.blur();
   });
   if (/reset=1/.test(location.search)) {
-    try { sessionStorage.removeItem('somna-reset'); } catch (e) {}
+    try {
+      sessionStorage.removeItem('somna-reset');
+      sessionStorage.removeItem('somna-good');
+    } catch (e) {}
     window.scrollTo(0, 0);
   }
+  let storedGood = false;
+  try { storedGood = sessionStorage.getItem('somna-good') === '1'; } catch (e) {}
+  if (storedGood) applyGood(true);
 
   /* expose a tiny dev hook for captures */
   window.__SOMNA = { state };
